@@ -1,6 +1,6 @@
-# Simple Thoughts Platform
+# ServerLord's Vibe Invoice Generator
 
-A minimalist microblogging platform with email OTP authentication that stores posts in JSON files.
+A minimalist microblogging platform with email OTP authentication that stores posts in JSON files. Create and share your vibes with the world!
 
 ## Local Development
 
@@ -51,11 +51,15 @@ For Gmail:
 - Your own server
 
 ## Features
-- 500 character posts
+- 500 character vibes (posts)
 - Edit history with version tracking
-- Delete posts
+- Delete vibes
 - Multi-user support with unique usernames
 - Email OTP authentication (no passwords)
 - User profiles at domain.com/username
 - Persistent JSON storage
 - Session-based authentication
+
+## Credits
+
+Created by [@ServerLord](https://serverlord.in) ([Atharva Kulkarni](https://atharvakulkarni.link))

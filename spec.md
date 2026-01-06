@@ -1,8 +1,8 @@
-# Minimalist Thoughts Platform Specification
+# ServerLord's Vibe Invoice Generator Specification
 
 ## Overview
 
-A minimalist multi-user microblogging platform with radical simplicity at its core. Users sign up with email OTP authentication and post short thoughts (max 500 characters) in reverse chronological order with full transparency and edit history.
+A minimalist multi-user microblogging platform branded as "ServerLord's Vibe Invoice Generator" with radical simplicity at its core. Users sign up with email OTP authentication and post short vibes (max 500 characters) in reverse chronological order with full transparency and edit history.
 
 ## Core Principles
 
@@ -56,9 +56,9 @@ A minimalist multi-user microblogging platform with radical simplicity at its co
 
 2. **Posting**
    - Text-only input, 500 character maximum
-   - Posts appear instantly (no drafts)
-   - Posts are numbered sequentially
-   - Newest posts appear first
+   - Vibes appear instantly (no drafts)
+   - Vibes are numbered sequentially
+   - Newest vibes appear first
 
 3. **Editing**
    - Edit button available on user's own posts
@@ -189,4 +189,8 @@ The following are noted but not planned:
 
 ## Summary
 
-This platform is aggressively simple. It does one thing: lets people post short thoughts publicly with a permanent address. No more, no less. Every decision should be evaluated against this core purpose and the principle of minimalism.
+This platform is aggressively simple. It does one thing: lets people post short vibes publicly with a permanent address. No more, no less. Every decision should be evaluated against this core purpose and the principle of minimalism.
+
+## Credits
+
+Created by [@ServerLord](https://serverlord.in) ([Atharva Kulkarni](https://atharvakulkarni.link))

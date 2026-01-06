@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thoughts</title>
+  <title>ServerLord's Vibe Invoice Generator</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -172,11 +172,37 @@
     .nav-links a:hover {
       text-decoration: underline;
     }
+    .brand-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      font-size: 12px;
+    }
+    .footer a {
+      color: #fff;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    body {
+      padding-bottom: 50px;
+    }
   </style>
 </head>
 <body>
   <div id="auth-container" class="auth-container">
-    <h1>Thoughts</h1>
+    <h1 class="brand-title">ServerLord's Vibe Invoice Generator</h1>
     <div class="tab-buttons">
       <button class="tab-button active" onclick="showTab('login')">Login</button>
       <button class="tab-button" onclick="showTab('signup')">Sign Up</button>
@@ -234,7 +260,7 @@
 
   <div id="app">
     <div class="header">
-      <h2 id="page-title">Thoughts</h2>
+      <h2 id="page-title">Vibe Invoice</h2>
       <div class="user-info">
         <span id="user-display"></span>
         <button onclick="logout()">Logout</button>
@@ -696,7 +722,7 @@
     function goHome(e) {
       if (e) e.preventDefault()
       viewingUser = null
-      document.getElementById('page-title').textContent = 'My Thoughts'
+      document.getElementById('page-title').textContent = 'My Vibes'
       document.getElementById('new-post').style.display = 'block'
       history.pushState(null, '', '/')
       loadPosts()
@@ -705,7 +731,7 @@
     function viewProfile(username, e) {
       if (e) e.preventDefault()
       viewingUser = username
-      document.getElementById('page-title').textContent = `@${username}'s thoughts`
+      document.getElementById('page-title').textContent = `@${username}'s vibes`
       document.getElementById('new-post').style.display = username === currentUser?.username ? 'block' : 'none'
       history.pushState(null, '', `/${username}`)
       loadPosts()
@@ -734,5 +760,10 @@
       if (e.key === 'Enter') sendSignupOTP()
     })
   </script>
+  
+  <div class="footer">
+    Created by <a href="https://serverlord.in" target="_blank">@ServerLord</a> 
+    (<a href="https://atharvakulkarni.link" target="_blank">Atharva Kulkarni</a>)
+  </div>
 </body>
 </html>

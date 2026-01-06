@@ -101,7 +101,7 @@ app.post('/api/signup/send-otp', async (req, res) => {
     await transporter.sendMail({
       from: EMAIL_USER,
       to: email,
-      subject: 'Your Thoughts Platform Signup Code',
+      subject: 'Your Vibe Invoice Signup Code',
       text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
       html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
     })
@@ -172,7 +172,7 @@ app.post('/api/login/send-otp', async (req, res) => {
     await transporter.sendMail({
       from: EMAIL_USER,
       to: email,
-      subject: 'Your Thoughts Platform Login Code',
+      subject: 'Your Vibe Invoice Login Code',
       text: `Your login code is: ${otp}\n\nThis code expires in 10 minutes.`,
       html: `<p>Your login code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
     })
