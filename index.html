@@ -13,7 +13,7 @@
       padding: 20px;
       line-height: 1.6;
     }
-    textarea {
+    input[type="password"], textarea {
       width: 100%;
       padding: 10px;
       font-family: monospace;
@@ -21,6 +21,9 @@
       border: 1px solid #ccc;
       resize: vertical;
       min-height: 80px;
+    }
+    input[type="password"] {
+      min-height: auto;
     }
     button {
       background: #000;
@@ -74,27 +77,106 @@
       text-align: right;
       margin-top: 5px;
     }
+    #login-form {
+      margin: 50px 0;
+      text-align: center;
+    }
+    #app {
+      display: none;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <div id="new-post">
-    <textarea id="post-input" placeholder="What's on your mind?" maxlength="500"></textarea>
-    <div class="char-count"><span id="char-count">0</span>/500</div>
-    <button onclick="createPost()">Post</button>
+  <div id="login-form">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Enter password" />
+    <br>
+    <button onclick="login()">Login</button>
+    <div id="login-error" class="error"></div>
   </div>
-  
-  <div id="posts"></div>
+
+  <div id="app">
+    <div id="new-post">
+      <textarea id="post-input" placeholder="What's on your mind?" maxlength="500"></textarea>
+      <div class="char-count"><span id="char-count">0</span>/500</div>
+      <button onclick="createPost()">Post</button>
+    </div>
+    
+    <div id="posts"></div>
+    <br>
+    <button onclick="logout()">Logout</button>
+  </div>
 
   <script>
     let posts = []
+    let authToken = localStorage.getItem('authToken')
+
+    // Check if already logged in
+    if (authToken) {
+      showApp()
+    }
+
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login()
+    })
 
     // Character counter
     document.getElementById('post-input').addEventListener('input', (e) => {
       document.getElementById('char-count').textContent = e.target.value.length
     })
 
-    // Load posts on start
-    loadPosts()
+    async function login() {
+      const password = document.getElementById('password').value
+      
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        })
+        
+        if (res.ok) {
+          const { token } = await res.json()
+          authToken = token
+          localStorage.setItem('authToken', token)
+          document.getElementById('login-error').textContent = ''
+          showApp()
+        } else {
+          document.getElementById('login-error').textContent = 'Invalid password'
+        }
+      } catch (err) {
+        document.getElementById('login-error').textContent = 'Error logging in'
+      }
+    }
+
+    function logout() {
+      authToken = null
+      localStorage.removeItem('authToken')
+      document.getElementById('login-form').style.display = 'block'
+      document.getElementById('app').style.display = 'none'
+      document.getElementById('password').value = ''
+    }
+
+    function showApp() {
+      document.getElementById('login-form').style.display = 'none'
+      document.getElementById('app').style.display = 'block'
+      loadPosts()
+    }
+
+    async function fetchWithAuth(url, options = {}) {
+      return fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+    }
 
     async function loadPosts() {
       const res = await fetch('/api/posts')
@@ -108,7 +190,7 @@
       
       if (!content) return
       
-      const res = await fetch('/api/post', {
+      const res = await fetchWithAuth('/api/post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
@@ -118,6 +200,9 @@
         input.value = ''
         document.getElementById('char-count').textContent = '0'
         await loadPosts()
+      } else if (res.status === 401) {
+        alert('Session expired. Please login again.')
+        logout()
       }
     }
 
@@ -144,7 +229,7 @@
       const content = document.getElementById(`edit-${id}`).value.trim()
       if (!content) return
       
-      const res = await fetch(`/api/post/${id}`, {
+      const res = await fetchWithAuth(`/api/post/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
@@ -152,6 +237,9 @@
       
       if (res.ok) {
         await loadPosts()
+      } else if (res.status === 401) {
+        alert('Session expired. Please login again.')
+        logout()
       }
     }
 
@@ -162,12 +250,15 @@
     async function deletePost(id) {
       if (!confirm('Delete this post?')) return
       
-      const res = await fetch(`/api/post/${id}`, {
+      const res = await fetchWithAuth(`/api/post/${id}`, {
         method: 'DELETE'
       })
       
       if (res.ok) {
         await loadPosts()
+      } else if (res.status === 401) {
+        alert('Session expired. Please login again.')
+        logout()
       }
     }
 
