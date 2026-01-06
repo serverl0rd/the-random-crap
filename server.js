@@ -23,7 +23,7 @@ function requireAuth(req, res, next) {
   next()
 }
 
-const DATA_FILE = process.env.FLY_APP_NAME ? '/data/posts.json' : 'posts.json'
+const DATA_FILE = process.env.DATA_PATH ? `${process.env.DATA_PATH}/posts.json` : 'posts.json'
 
 // Initialize posts file if it doesn't exist
 if (!fs.existsSync(DATA_FILE)) {

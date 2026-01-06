@@ -1,8 +1,8 @@
-# Minimalist Shitposting Portal Specification
+# Minimalist Thoughts Platform Specification
 
 ## Overview
 
-A pure, unfiltered microblogging platform built on Internet Computer with radical simplicity at its core. Users post short thoughts (max 500 characters) in reverse chronological order with full transparency and edit history.
+A personal microblogging platform with radical simplicity at its core. Post short thoughts (max 500 characters) in reverse chronological order with full transparency and edit history.
 
 ## Core Principles
 
@@ -14,34 +14,31 @@ A pure, unfiltered microblogging platform built on Internet Computer with radica
 ## Technical Architecture
 
 ### Platform
-- **Blockchain**: Internet Computer (IC)
-- **Architecture**: Single canister deployment
-- **Authentication**: Internet Identity
-- **Frontend**: Responsive web interface
+- **Backend**: Node.js with Express
+- **Database**: JSON file storage
+- **Authentication**: Simple password protection
+- **Frontend**: Vanilla HTML/CSS/JavaScript
 - **Protocol**: HTTPS only
 
 ### Data Model
 
-```
-User {
-  principal: Principal (from Internet Identity)
-  username: string (unique, immutable after creation)
-  created_at: timestamp
-  post_count: nat
-}
-
-Post {
-  id: nat (sequential per user, starting at 1)
-  author: Principal
-  content: string (max 500 chars)
-  created_at: timestamp
-  updated_at: timestamp
-  versions: [PostVersion]
-}
-
-PostVersion {
-  content: string
-  timestamp: timestamp
+```json
+{
+  "posts": [
+    {
+      "id": 1,
+      "content": "string (max 500 chars)",
+      "created": "ISO 8601 timestamp",
+      "edited": "ISO 8601 timestamp or false",
+      "versions": [
+        {
+          "content": "string",
+          "edited": "ISO 8601 timestamp"
+        }
+      ]
+    }
+  ],
+  "nextId": 2
 }
 ```
 
@@ -50,15 +47,15 @@ PostVersion {
 ### Core Functionality
 
 1. **Authentication**
-   - Login via Internet Identity
-   - First-time users choose username (permanent)
-   - No profile pages, no user settings
+   - Single password for access
+   - Session tokens stored in localStorage
+   - No user accounts or profiles
 
 2. **Posting**
    - Text-only input, 500 character maximum
    - Posts appear instantly (no drafts)
-   - Each post gets unique URL: `domain.com/username/post-id`
-   - Post IDs are sequential integers per user
+   - Posts are numbered sequentially
+   - Newest posts appear first
 
 3. **Editing**
    - Edit button available on user's own posts
@@ -111,27 +108,14 @@ PostVersion {
 - `/export` - Download user's data
 - `/login` - Internet Identity auth flow
 
-### Canister Methods
+### API Endpoints
 
 ```
-// User Management
-create_username(username: Text) -> Result<(), Error>
-
-// Posting
-create_post(content: Text) -> Result<Nat, Error>
-edit_post(post_id: Nat, content: Text) -> Result<(), Error>
-delete_post(post_id: Nat) -> Result<(), Error>
-
-// Reading
-get_user_posts(username: Text) -> Vec<Post>
-get_post(username: Text, post_id: Nat) -> Result<Post, Error>
-get_post_history(username: Text, post_id: Nat) -> Vec<PostVersion>
-
-// Admin
-admin_delete_post(username: Text, post_id: Nat) -> Result<(), Error>
-
-// Export
-export_user_data() -> Text  // Returns Markdown
+POST /api/login         - Authenticate with password
+GET  /api/posts         - Get all posts (public)
+POST /api/post          - Create new post (auth required)
+PUT  /api/post/:id      - Edit post (auth required)
+DELETE /api/post/:id    - Delete post (auth required)
 ```
 
 ### Frontend Requirements
@@ -143,12 +127,12 @@ export_user_data() -> Text  // Returns Markdown
 - High contrast, readable typography
 - No images, no icons, text only
 
-### Upgrade Strategy
+### Deployment
 
-- Stable memory for data persistence
-- Pre/post upgrade hooks for migrations
-- Accepted downtime during upgrades
-- No versioning complexity
+- Can run on any Node.js host
+- JSON file persists data
+- Environment variable for password
+- Zero database setup required
 
 ## Non-Features (Explicitly Excluded)
 
@@ -168,14 +152,13 @@ export_user_data() -> Text  // Returns Markdown
 
 ## Edge Cases & Decisions
 
-1. **Concurrent Posts**: Last write wins for post ID assignment
+1. **Concurrent Posts**: File system handles atomicity
 2. **Empty Posts**: Not allowed (minimum 1 character)
 3. **Unicode**: Full UTF-8 support, emoji counted as characters
-4. **Rate Limiting**: None - true chaos mode
-5. **Canister Storage**: No limits until IC enforces them
-6. **URL Collisions**: Not possible due to sequential IDs
-7. **Username Squatting**: First-come, first-served
-8. **Post ID Gaps**: Preserved to maintain URL stability
+4. **Rate Limiting**: None
+5. **Storage**: Limited only by disk space
+6. **Post ID Gaps**: Preserved when posts are deleted
+7. **Session Management**: In-memory, clears on restart
 
 ## Success Metrics
 
@@ -188,8 +171,9 @@ Success is defined by:
 ## Future Considerations
 
 The following are noted but not planned:
-- Multi-canister architecture (only if single canister hits IC limits)
-- Backup/archive strategy (only if storage becomes issue)
+- Database migration (JSON works fine)
+- Multiple users (personal platform)
+- API versioning (single version only)
 - Federation with other instances (violates simplicity)
 
 ## Summary

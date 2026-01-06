@@ -33,12 +33,15 @@ Visit http://localhost:3000
 3. Choose "Deploy from GitHub repo"
 4. Add a volume for persistent storage
 
-### Option 4: Vercel (Requires Modifications)
-Would need to switch from JSON file to a database like Vercel KV
+### Option 4: Deploy Anywhere
+- Any VPS with Node.js
+- Heroku free tier (if available)
+- Your own server
 
 ## Features
 - 500 character posts
-- Edit history
+- Edit history with version tracking
 - Delete posts
-- No login required (single user)
+- Password protected (single user)
 - Persistent JSON storage
+- Session-based authentication
