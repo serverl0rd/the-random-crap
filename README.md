@@ -32,16 +32,31 @@ Username: testuser
 
 ## Email Configuration
 
-### For Gmail:
+### Option 1: Resend (Recommended - Most Reliable)
+1. Sign up at [resend.com](https://resend.com) (free)
+2. Get your API key from the dashboard
+3. Set environment variables:
+   - `RESEND_API_KEY`: Your API key (starts with `re_`)
+   - `FROM_EMAIL`: `onboarding@resend.dev` (or your verified domain)
+4. That's it! No complex passwords or 2FA needed
+
+### Option 2: Gmail (Can be unreliable)
 1. Enable 2-factor authentication on your Google account
 2. Generate an app password: https://myaccount.google.com/apppasswords
-3. Use your email and the generated app password (not your regular password)
+3. Enter the 16-character password WITHOUT spaces
+4. Set environment variables:
+   - `EMAIL_USER`: Your Gmail address
+   - `EMAIL_PASS`: The app password (no spaces!)
 
-### For Development:
-Set `DEV_MODE=true` to skip email sending and log OTPs to console
+### Option 3: Development Mode
+Set `DEV_MODE=true` to skip emails and show OTPs in console/logs
 
-### For Other Email Providers:
-Modify the transporter configuration in server.js
+### Why Resend?
+- Built specifically for developers
+- 100 free emails/day
+- Works instantly, no authentication issues
+- Better deliverability than Gmail SMTP
+- Simple API, no complex configuration
 
 ## Deployment Options
 

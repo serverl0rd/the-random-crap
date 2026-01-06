@@ -3,6 +3,7 @@ const express = require('express')
 const fs = require('fs')
 const crypto = require('crypto')
 const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 const app = express()
 
 app.use(express.json())
@@ -25,58 +26,73 @@ app.use(express.static('.'))
 // Email configuration - use environment variables in production
 const EMAIL_USER = process.env.EMAIL_USER || 'your-email@gmail.com'
 const EMAIL_PASS = process.env.EMAIL_PASS || 'your-app-password'
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@the-random-crap.com'
 const DEV_MODE = process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development'
+const USE_RESEND = !!RESEND_API_KEY // Use Resend if API key is provided
 
-// Log configuration (without exposing password)
+// Log configuration (without exposing passwords)
 console.log('Email Config:', {
-  EMAIL_USER,
-  EMAIL_PASS: EMAIL_PASS ? '***' + EMAIL_PASS.slice(-4) : 'not set',
+  USE_RESEND,
+  FROM_EMAIL,
+  EMAIL_USER: USE_RESEND ? 'N/A (using Resend)' : EMAIL_USER,
+  EMAIL_PASS: USE_RESEND ? 'N/A (using Resend)' : (EMAIL_PASS ? '***' + EMAIL_PASS.slice(-4) : 'not set'),
+  RESEND_API_KEY: RESEND_API_KEY ? '***' + RESEND_API_KEY.slice(-4) : 'not set',
   DEV_MODE,
   NODE_ENV: process.env.NODE_ENV
 })
 
-// Create email transporter
+// Create email service
+let emailService = null
 let transporter = null
+
 if (!DEV_MODE) {
-  try {
-    // Check if using Gmail or custom SMTP
-    if (EMAIL_USER.includes('@gmail.com')) {
-      transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: EMAIL_USER,
-          pass: EMAIL_PASS
-        },
-        tls: {
-          rejectUnauthorized: false
-        }
-      })
-    } else {
-      // For other email providers, use SMTP
-      transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: process.env.SMTP_PORT || 587,
-        secure: false,
-        auth: {
-          user: EMAIL_USER,
-          pass: EMAIL_PASS
-        },
-        tls: {
-          rejectUnauthorized: false
-        }
-      })
-    }
-    
-    // Verify transporter
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error('Email transporter verification failed:', error.message)
+  if (USE_RESEND) {
+    // Use Resend (recommended)
+    emailService = new Resend(RESEND_API_KEY)
+    console.log('Using Resend for email delivery')
+  } else {
+    // Fall back to SMTP
+    try {
+      // Check if using Gmail or custom SMTP
+      if (EMAIL_USER.includes('@gmail.com')) {
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        })
       } else {
-        console.log('Email transporter is ready')
+        // For other email providers, use SMTP
+        transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: process.env.SMTP_PORT || 587,
+          secure: false,
+          auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        })
       }
-    })
-  } catch (error) {
-    console.error('Failed to create email transporter:', error.message)
+      
+      // Verify transporter
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error('Email transporter verification failed:', error.message)
+        } else {
+          console.log('Email transporter is ready')
+        }
+      })
+    } catch (error) {
+      console.error('Failed to create email transporter:', error.message)
+    }
   }
 }
 
@@ -112,6 +128,35 @@ function requireAuth(req, res, next) {
   next()
 }
 
+// Send email function that works with both Resend and SMTP
+async function sendEmail(to, subject, text, html) {
+  if (USE_RESEND) {
+    // Use Resend API
+    const { data, error } = await emailService.emails.send({
+      from: FROM_EMAIL,
+      to: to,
+      subject: subject,
+      text: text,
+      html: html
+    })
+    
+    if (error) {
+      throw new Error(error.message || 'Resend API error')
+    }
+    
+    return data
+  } else {
+    // Use SMTP
+    return await transporter.sendMail({
+      from: EMAIL_USER,
+      to: to,
+      subject: subject,
+      text: text,
+      html: html
+    })
+  }
+}
+
 // Email error handler
 function handleEmailError(error, res) {
   console.error('Email error:', error.message)
@@ -133,6 +178,9 @@ function handleEmailError(error, res) {
   } else if (error.message.includes('Invalid login')) {
     errorMessage = 'Invalid email credentials'
     hint = 'Check EMAIL_USER and EMAIL_PASS environment variables'
+  } else if (error.message.includes('Resend API')) {
+    errorMessage = 'Email service error'
+    hint = 'Check RESEND_API_KEY configuration'
   }
   
   res.status(500).json({ 
@@ -195,13 +243,12 @@ app.post('/api/signup/send-otp', async (req, res) => {
       console.log(`===========================\n`)
       res.json({ message: 'OTP sent to email (check console in dev mode)' })
     } else {
-      await transporter.sendMail({
-        from: EMAIL_USER,
-        to: email,
-        subject: 'Your Random Crap Signup Code',
-        text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
-        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
-      })
+      await sendEmail(
+        email,
+        'Your Random Crap Signup Code',
+        `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
+        `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+      )
       res.json({ message: 'OTP sent to email' })
     }
   } catch (error) {
@@ -274,13 +321,12 @@ app.post('/api/login/send-otp', async (req, res) => {
       console.log(`===========================\n`)
       res.json({ message: 'OTP sent to email (check console in dev mode)' })
     } else {
-      await transporter.sendMail({
-        from: EMAIL_USER,
-        to: email,
-        subject: 'Your Random Crap Login Code',
-        text: `Your login code is: ${otp}\n\nThis code expires in 10 minutes.`,
-        html: `<p>Your login code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
-      })
+      await sendEmail(
+        email,
+        'Your Random Crap Login Code',
+        `Your login code is: ${otp}\n\nThis code expires in 10 minutes.`,
+        `<p>Your login code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+      )
       res.json({ message: 'OTP sent to email' })
     }
   } catch (error) {
