@@ -239,7 +239,7 @@
       <div id="signup-step1">
         <input type="email" id="signup-email" placeholder="Email address" />
         <input type="text" id="signup-username" placeholder="Username (3-20 chars)" 
-               pattern="[a-zA-Z0-9_-]{3,20}" maxlength="20" />
+               pattern="[a-zA-Z0-9_\-]{3,20}" maxlength="20" />
         <div id="username-check" class="username-check"></div>
         <button onclick="console.log('Button clicked'); sendSignupOTP()" id="signup-button">Send Code</button>
         <div id="signup-error" class="error"></div>
@@ -337,7 +337,7 @@
         return
       }
       
-      if (!username.match(/^[a-zA-Z0-9_-]{3,20}$/)) {
+      if (!username.match(/^[a-zA-Z0-9_\-]{3,20}$/)) {
         checkDiv.textContent = 'Only letters, numbers, _ and -'
         checkDiv.className = 'username-check taken'
         return

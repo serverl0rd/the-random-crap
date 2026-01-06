@@ -71,7 +71,7 @@ function requireAuth(req, res, next) {
 // Check if username is available
 app.post('/api/check-username', (req, res) => {
   const { username } = req.body
-  if (!username || !username.match(/^[a-zA-Z0-9_-]{3,20}$/)) {
+  if (!username || !username.match(/^[a-zA-Z0-9_\-]{3,20}$/)) {
     return res.status(400).json({ error: 'Invalid username format' })
   }
   
@@ -89,7 +89,7 @@ app.post('/api/signup/send-otp', async (req, res) => {
     return res.status(400).json({ error: 'Invalid email format' })
   }
   
-  if (!username || !username.match(/^[a-zA-Z0-9_-]{3,20}$/)) {
+  if (!username || !username.match(/^[a-zA-Z0-9_\-]{3,20}$/)) {
     return res.status(400).json({ error: 'Invalid username format' })
   }
   
