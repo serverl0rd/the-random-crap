@@ -1,18 +1,47 @@
 const express = require('express')
 const fs = require('fs')
 const crypto = require('crypto')
+const nodemailer = require('nodemailer')
 const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static('.'))
 
-// Simple auth
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'change-me-please'
+// Email configuration - use environment variables in production
+const EMAIL_USER = process.env.EMAIL_USER || 'your-email@gmail.com'
+const EMAIL_PASS = process.env.EMAIL_PASS || 'your-app-password'
+
+// Create email transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: EMAIL_USER,
+    pass: EMAIL_PASS
+  }
+})
+
+// In-memory stores
 const sessions = new Map()
+const otpStore = new Map() // email -> { otp, expires, username }
+
+const DATA_FILE = process.env.DATA_PATH ? `${process.env.DATA_PATH}/posts.json` : 'posts.json'
+const USERS_FILE = process.env.DATA_PATH ? `${process.env.DATA_PATH}/users.json` : 'users.json'
+
+// Initialize files if they don't exist
+if (!fs.existsSync(DATA_FILE)) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify({ posts: [] }))
+}
+if (!fs.existsSync(USERS_FILE)) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify({ users: {} }))
+}
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex')
+}
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 function requireAuth(req, res, next) {
@@ -20,31 +49,181 @@ function requireAuth(req, res, next) {
   if (!token || !sessions.has(token)) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
+  req.user = sessions.get(token)
   next()
 }
 
-const DATA_FILE = process.env.DATA_PATH ? `${process.env.DATA_PATH}/posts.json` : 'posts.json'
+// Check if username is available
+app.post('/api/check-username', (req, res) => {
+  const { username } = req.body
+  if (!username || !username.match(/^[a-zA-Z0-9_-]{3,20}$/)) {
+    return res.status(400).json({ error: 'Invalid username format' })
+  }
+  
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  const available = !Object.values(users.users).some(u => u.username === username)
+  res.json({ available })
+})
 
-// Initialize posts file if it doesn't exist
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({ posts: [], nextId: 1 }))
-}
-
-// Login
-app.post('/api/login', (req, res) => {
-  if (req.body.password === ADMIN_PASSWORD) {
-    const token = generateToken()
-    sessions.set(token, { loggedIn: true })
-    res.json({ token })
-  } else {
-    res.status(401).json({ error: 'Invalid password' })
+// Send OTP for signup
+app.post('/api/signup/send-otp', async (req, res) => {
+  const { email, username } = req.body
+  
+  if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    return res.status(400).json({ error: 'Invalid email format' })
+  }
+  
+  if (!username || !username.match(/^[a-zA-Z0-9_-]{3,20}$/)) {
+    return res.status(400).json({ error: 'Invalid username format' })
+  }
+  
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  
+  // Check if email already exists
+  if (users.users[email]) {
+    return res.status(400).json({ error: 'Email already registered' })
+  }
+  
+  // Check if username is taken
+  if (Object.values(users.users).some(u => u.username === username)) {
+    return res.status(400).json({ error: 'Username already taken' })
+  }
+  
+  const otp = generateOTP()
+  otpStore.set(email, {
+    otp,
+    username,
+    expires: Date.now() + 10 * 60 * 1000, // 10 minutes
+    type: 'signup'
+  })
+  
+  try {
+    await transporter.sendMail({
+      from: EMAIL_USER,
+      to: email,
+      subject: 'Your Thoughts Platform Signup Code',
+      text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
+      html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+    })
+    res.json({ message: 'OTP sent to email' })
+  } catch (error) {
+    console.error('Email error:', error)
+    res.status(500).json({ error: 'Failed to send email' })
   }
 })
 
-// Get all posts
-app.get('/api/posts', (req, res) => {
+// Verify OTP and create account
+app.post('/api/signup/verify', (req, res) => {
+  const { email, otp } = req.body
+  
+  const stored = otpStore.get(email)
+  if (!stored || stored.type !== 'signup') {
+    return res.status(400).json({ error: 'No pending signup for this email' })
+  }
+  
+  if (Date.now() > stored.expires) {
+    otpStore.delete(email)
+    return res.status(400).json({ error: 'OTP expired' })
+  }
+  
+  if (stored.otp !== otp) {
+    return res.status(400).json({ error: 'Invalid OTP' })
+  }
+  
+  // Create user
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  users.users[email] = {
+    username: stored.username,
+    created: new Date().toISOString(),
+    postCount: 0
+  }
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2))
+  
+  // Create session
+  const token = generateToken()
+  sessions.set(token, { email, username: stored.username })
+  
+  otpStore.delete(email)
+  res.json({ token, username: stored.username })
+})
+
+// Send OTP for login
+app.post('/api/login/send-otp', async (req, res) => {
+  const { email } = req.body
+  
+  if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    return res.status(400).json({ error: 'Invalid email format' })
+  }
+  
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  
+  if (!users.users[email]) {
+    return res.status(400).json({ error: 'Email not registered' })
+  }
+  
+  const otp = generateOTP()
+  otpStore.set(email, {
+    otp,
+    expires: Date.now() + 10 * 60 * 1000,
+    type: 'login'
+  })
+  
+  try {
+    await transporter.sendMail({
+      from: EMAIL_USER,
+      to: email,
+      subject: 'Your Thoughts Platform Login Code',
+      text: `Your login code is: ${otp}\n\nThis code expires in 10 minutes.`,
+      html: `<p>Your login code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+    })
+    res.json({ message: 'OTP sent to email' })
+  } catch (error) {
+    console.error('Email error:', error)
+    res.status(500).json({ error: 'Failed to send email' })
+  }
+})
+
+// Verify OTP for login
+app.post('/api/login/verify', (req, res) => {
+  const { email, otp } = req.body
+  
+  const stored = otpStore.get(email)
+  if (!stored || stored.type !== 'login') {
+    return res.status(400).json({ error: 'No pending login for this email' })
+  }
+  
+  if (Date.now() > stored.expires) {
+    otpStore.delete(email)
+    return res.status(400).json({ error: 'OTP expired' })
+  }
+  
+  if (stored.otp !== otp) {
+    return res.status(400).json({ error: 'Invalid OTP' })
+  }
+  
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  const user = users.users[email]
+  
+  const token = generateToken()
+  sessions.set(token, { email, username: user.username })
+  
+  otpStore.delete(email)
+  res.json({ token, username: user.username })
+})
+
+// Get posts for a specific user
+app.get('/api/posts/:username', (req, res) => {
+  const { username } = req.params
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
-  res.json(data.posts)
+  const userPosts = data.posts.filter(p => p.username === username)
+  res.json(userPosts)
+})
+
+// Get current user's posts
+app.get('/api/my-posts', requireAuth, (req, res) => {
+  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+  const userPosts = data.posts.filter(p => p.username === req.user.username)
+  res.json(userPosts)
 })
 
 // Create post
@@ -55,8 +234,14 @@ app.post('/api/post', requireAuth, (req, res) => {
   }
 
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  
+  // Get user's current post count
+  const userPostCount = data.posts.filter(p => p.username === req.user.username).length
+  
   const post = {
-    id: data.nextId++,
+    id: userPostCount + 1,
+    username: req.user.username,
     content: content.trim(),
     created: new Date().toISOString(),
     edited: false,
@@ -65,6 +250,11 @@ app.post('/api/post', requireAuth, (req, res) => {
   
   data.posts.unshift(post)
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2))
+  
+  // Update user's post count
+  users.users[req.user.email].postCount++
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2))
+  
   res.json(post)
 })
 
@@ -76,7 +266,9 @@ app.put('/api/post/:id', requireAuth, (req, res) => {
   }
 
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
-  const post = data.posts.find(p => p.id === parseInt(req.params.id))
+  const post = data.posts.find(p => 
+    p.username === req.user.username && p.id === parseInt(req.params.id)
+  )
   
   if (!post) {
     return res.status(404).json({ error: 'Post not found' })
@@ -97,7 +289,9 @@ app.put('/api/post/:id', requireAuth, (req, res) => {
 // Delete post
 app.delete('/api/post/:id', requireAuth, (req, res) => {
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
-  const index = data.posts.findIndex(p => p.id === parseInt(req.params.id))
+  const index = data.posts.findIndex(p => 
+    p.username === req.user.username && p.id === parseInt(req.params.id)
+  )
   
   if (index === -1) {
     return res.status(404).json({ error: 'Post not found' })
@@ -105,7 +299,33 @@ app.delete('/api/post/:id', requireAuth, (req, res) => {
 
   data.posts.splice(index, 1)
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2))
+  
   res.json({ success: true })
+})
+
+// Get user info
+app.get('/api/user/:username', (req, res) => {
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+  const user = Object.values(users.users).find(u => u.username === req.params.username)
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' })
+  }
+  
+  res.json({ 
+    username: user.username,
+    created: user.created,
+    postCount: user.postCount
+  })
+})
+
+// Serve user pages
+app.get('/:username', (req, res) => {
+  res.sendFile(__dirname + '/index.html')
+})
+
+app.get('/:username/:postId', (req, res) => {
+  res.sendFile(__dirname + '/index.html')
 })
 
 const PORT = process.env.PORT || 3000

@@ -1,15 +1,27 @@
 # Simple Thoughts Platform
 
-A minimalist microblogging platform that stores posts in a JSON file.
+A minimalist microblogging platform with email OTP authentication that stores posts in JSON files.
 
 ## Local Development
 
 ```bash
 npm install
+
+# Create .env file with your email settings
+cp .env.example .env
+# Edit .env with your Gmail credentials
+
 npm start
 ```
 
 Visit http://localhost:3000
+
+## Email Configuration
+
+For Gmail:
+1. Enable 2-factor authentication
+2. Generate an app password: https://myaccount.google.com/apppasswords
+3. Use your email and app password in .env
 
 ## Deployment Options
 
@@ -42,6 +54,8 @@ Visit http://localhost:3000
 - 500 character posts
 - Edit history with version tracking
 - Delete posts
-- Password protected (single user)
+- Multi-user support with unique usernames
+- Email OTP authentication (no passwords)
+- User profiles at domain.com/username
 - Persistent JSON storage
 - Session-based authentication

@@ -13,28 +13,32 @@
       padding: 20px;
       line-height: 1.6;
     }
-    input[type="password"], textarea {
+    input[type="email"], input[type="text"], textarea {
       width: 100%;
       padding: 10px;
       font-family: monospace;
       font-size: 16px;
       border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    textarea {
       resize: vertical;
       min-height: 80px;
-    }
-    input[type="password"] {
-      min-height: auto;
     }
     button {
       background: #000;
       color: #fff;
       border: none;
       padding: 10px 20px;
-      margin-top: 10px;
+      margin-right: 10px;
       cursor: pointer;
       font-family: monospace;
     }
     button:hover { background: #333; }
+    button:disabled { 
+      background: #999; 
+      cursor: not-allowed;
+    }
     .post {
       border-bottom: 1px solid #eee;
       padding: 20px 0;
@@ -77,9 +81,48 @@
       text-align: right;
       margin-top: 5px;
     }
-    #login-form {
+    .char-count.over { color: red; }
+    .auth-container {
       margin: 50px 0;
       text-align: center;
+    }
+    .tab-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    .tab-button {
+      background: #f0f0f0;
+      color: #000;
+      padding: 10px 30px;
+      border: none;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 16px;
+    }
+    .tab-button.active {
+      background: #000;
+      color: #fff;
+    }
+    .auth-form {
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    .auth-form input {
+      margin-bottom: 15px;
+    }
+    .otp-inputs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .otp-input {
+      width: 40px;
+      height: 50px;
+      text-align: center;
+      font-size: 20px;
+      font-family: monospace;
     }
     #app {
       display: none;
@@ -89,18 +132,120 @@
       font-size: 14px;
       margin-top: 10px;
     }
+    .success {
+      color: green;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .info {
+      color: #666;
+      font-size: 14px;
+      margin: 10px 0;
+    }
+    .username-check {
+      font-size: 12px;
+      margin-top: -10px;
+      margin-bottom: 10px;
+    }
+    .username-check.available { color: green; }
+    .username-check.taken { color: red; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .user-info {
+      font-size: 14px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .nav-links a {
+      color: #000;
+      text-decoration: none;
+    }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  <div id="login-form">
-    <h2>Login</h2>
-    <input type="password" id="password" placeholder="Enter password" />
-    <br>
-    <button onclick="login()">Login</button>
-    <div id="login-error" class="error"></div>
+  <div id="auth-container" class="auth-container">
+    <h1>Thoughts</h1>
+    <div class="tab-buttons">
+      <button class="tab-button active" onclick="showTab('login')">Login</button>
+      <button class="tab-button" onclick="showTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form" class="auth-form">
+      <div id="login-step1">
+        <input type="email" id="login-email" placeholder="Email address" />
+        <button onclick="sendLoginOTP()">Send Code</button>
+        <div id="login-error" class="error"></div>
+      </div>
+      <div id="login-step2" style="display: none;">
+        <p class="info">Enter the 6-digit code sent to your email</p>
+        <div class="otp-inputs">
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+        </div>
+        <button onclick="verifyLoginOTP()">Verify & Login</button>
+        <button onclick="resetLogin()">Back</button>
+        <div id="login-verify-error" class="error"></div>
+      </div>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="signup-form" class="auth-form" style="display: none;">
+      <div id="signup-step1">
+        <input type="email" id="signup-email" placeholder="Email address" />
+        <input type="text" id="signup-username" placeholder="Username (3-20 chars)" 
+               pattern="[a-zA-Z0-9_-]{3,20}" maxlength="20" />
+        <div id="username-check" class="username-check"></div>
+        <button onclick="sendSignupOTP()" id="signup-button">Send Code</button>
+        <div id="signup-error" class="error"></div>
+      </div>
+      <div id="signup-step2" style="display: none;">
+        <p class="info">Enter the 6-digit code sent to your email</p>
+        <div class="otp-inputs" id="signup-otp-inputs">
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+          <input type="text" class="otp-input" maxlength="1" />
+        </div>
+        <button onclick="verifySignupOTP()">Verify & Create Account</button>
+        <button onclick="resetSignup()">Back</button>
+        <div id="signup-verify-error" class="error"></div>
+      </div>
+    </div>
   </div>
 
   <div id="app">
+    <div class="header">
+      <h2 id="page-title">Thoughts</h2>
+      <div class="user-info">
+        <span id="user-display"></span>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+    
+    <div class="nav-links" id="nav-links">
+      <a href="/" onclick="goHome(event)">Home</a>
+      <a href="#" onclick="viewProfile(currentUser?.username, event)" id="profile-link">My Posts</a>
+    </div>
+
     <div id="new-post">
       <textarea id="post-input" placeholder="What's on your mind?" maxlength="500"></textarea>
       <div class="char-count"><span id="char-count">0</span>/500</div>
@@ -108,64 +253,294 @@
     </div>
     
     <div id="posts"></div>
-    <br>
-    <button onclick="logout()">Logout</button>
   </div>
 
   <script>
     let posts = []
     let authToken = localStorage.getItem('authToken')
+    let currentUser = null
+    let viewingUser = null
+    let usernameCheckTimeout = null
 
     // Check if already logged in
     if (authToken) {
-      showApp()
+      const savedUser = localStorage.getItem('currentUser')
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser)
+        showApp()
+      } else {
+        localStorage.removeItem('authToken')
+      }
     }
 
-    document.getElementById('password').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') login()
+    // Tab switching
+    function showTab(tab) {
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active')
+      })
+      event.target.classList.add('active')
+      
+      if (tab === 'login') {
+        document.getElementById('login-form').style.display = 'block'
+        document.getElementById('signup-form').style.display = 'none'
+      } else {
+        document.getElementById('login-form').style.display = 'none'
+        document.getElementById('signup-form').style.display = 'block'
+      }
+    }
+
+    // Username availability check
+    document.getElementById('signup-username').addEventListener('input', (e) => {
+      clearTimeout(usernameCheckTimeout)
+      const username = e.target.value
+      const checkDiv = document.getElementById('username-check')
+      
+      if (username.length < 3) {
+        checkDiv.textContent = ''
+        return
+      }
+      
+      if (!username.match(/^[a-zA-Z0-9_-]{3,20}$/)) {
+        checkDiv.textContent = 'Only letters, numbers, _ and -'
+        checkDiv.className = 'username-check taken'
+        return
+      }
+      
+      checkDiv.textContent = 'Checking...'
+      checkDiv.className = 'username-check'
+      
+      usernameCheckTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/check-username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username })
+          })
+          const data = await res.json()
+          
+          if (data.available) {
+            checkDiv.textContent = '✓ Available'
+            checkDiv.className = 'username-check available'
+          } else {
+            checkDiv.textContent = '✗ Already taken'
+            checkDiv.className = 'username-check taken'
+          }
+        } catch (err) {
+          checkDiv.textContent = ''
+        }
+      }, 500)
+    })
+
+    // OTP input handling
+    document.querySelectorAll('.otp-inputs').forEach(container => {
+      const inputs = container.querySelectorAll('.otp-input')
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          if (e.target.value && index < inputs.length - 1) {
+            inputs[index + 1].focus()
+          }
+        })
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            inputs[index - 1].focus()
+          }
+        })
+        input.addEventListener('paste', (e) => {
+          e.preventDefault()
+          const paste = e.clipboardData.getData('text')
+          const chars = paste.split('').slice(0, 6)
+          chars.forEach((char, i) => {
+            if (inputs[i]) {
+              inputs[i].value = char
+            }
+          })
+          if (chars.length === 6) {
+            inputs[5].focus()
+          }
+        })
+      })
     })
 
     // Character counter
     document.getElementById('post-input').addEventListener('input', (e) => {
-      document.getElementById('char-count').textContent = e.target.value.length
+      const count = e.target.value.length
+      document.getElementById('char-count').textContent = count
+      document.querySelector('.char-count').classList.toggle('over', count > 500)
     })
 
-    async function login() {
-      const password = document.getElementById('password').value
+    // Signup flow
+    async function sendSignupOTP() {
+      const email = document.getElementById('signup-email').value
+      const username = document.getElementById('signup-username').value
+      const errorDiv = document.getElementById('signup-error')
+      
+      if (!email || !username) {
+        errorDiv.textContent = 'Please fill in all fields'
+        return
+      }
       
       try {
-        const res = await fetch('/api/login', {
+        const res = await fetch('/api/signup/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
+          body: JSON.stringify({ email, username })
         })
         
+        const data = await res.json()
+        
         if (res.ok) {
-          const { token } = await res.json()
-          authToken = token
-          localStorage.setItem('authToken', token)
-          document.getElementById('login-error').textContent = ''
-          showApp()
+          document.getElementById('signup-step1').style.display = 'none'
+          document.getElementById('signup-step2').style.display = 'block'
+          document.querySelector('#signup-otp-inputs .otp-input').focus()
         } else {
-          document.getElementById('login-error').textContent = 'Invalid password'
+          errorDiv.textContent = data.error
         }
       } catch (err) {
-        document.getElementById('login-error').textContent = 'Error logging in'
+        errorDiv.textContent = 'Failed to send code'
       }
+    }
+
+    async function verifySignupOTP() {
+      const email = document.getElementById('signup-email').value
+      const inputs = document.querySelectorAll('#signup-otp-inputs .otp-input')
+      const otp = Array.from(inputs).map(i => i.value).join('')
+      const errorDiv = document.getElementById('signup-verify-error')
+      
+      if (otp.length !== 6) {
+        errorDiv.textContent = 'Please enter the 6-digit code'
+        return
+      }
+      
+      try {
+        const res = await fetch('/api/signup/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp })
+        })
+        
+        const data = await res.json()
+        
+        if (res.ok) {
+          authToken = data.token
+          currentUser = { email, username: data.username }
+          localStorage.setItem('authToken', authToken)
+          localStorage.setItem('currentUser', JSON.stringify(currentUser))
+          showApp()
+        } else {
+          errorDiv.textContent = data.error
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Failed to verify code'
+      }
+    }
+
+    function resetSignup() {
+      document.getElementById('signup-step1').style.display = 'block'
+      document.getElementById('signup-step2').style.display = 'none'
+      document.querySelectorAll('#signup-otp-inputs .otp-input').forEach(i => i.value = '')
+      document.getElementById('signup-verify-error').textContent = ''
+    }
+
+    // Login flow
+    async function sendLoginOTP() {
+      const email = document.getElementById('login-email').value
+      const errorDiv = document.getElementById('login-error')
+      
+      if (!email) {
+        errorDiv.textContent = 'Please enter your email'
+        return
+      }
+      
+      try {
+        const res = await fetch('/api/login/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
+        
+        const data = await res.json()
+        
+        if (res.ok) {
+          document.getElementById('login-step1').style.display = 'none'
+          document.getElementById('login-step2').style.display = 'block'
+          document.querySelector('#login-step2 .otp-input').focus()
+        } else {
+          errorDiv.textContent = data.error
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Failed to send code'
+      }
+    }
+
+    async function verifyLoginOTP() {
+      const email = document.getElementById('login-email').value
+      const inputs = document.querySelectorAll('#login-step2 .otp-input')
+      const otp = Array.from(inputs).map(i => i.value).join('')
+      const errorDiv = document.getElementById('login-verify-error')
+      
+      if (otp.length !== 6) {
+        errorDiv.textContent = 'Please enter the 6-digit code'
+        return
+      }
+      
+      try {
+        const res = await fetch('/api/login/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp })
+        })
+        
+        const data = await res.json()
+        
+        if (res.ok) {
+          authToken = data.token
+          currentUser = { email, username: data.username }
+          localStorage.setItem('authToken', authToken)
+          localStorage.setItem('currentUser', JSON.stringify(currentUser))
+          showApp()
+        } else {
+          errorDiv.textContent = data.error
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Failed to verify code'
+      }
+    }
+
+    function resetLogin() {
+      document.getElementById('login-step1').style.display = 'block'
+      document.getElementById('login-step2').style.display = 'none'
+      document.querySelectorAll('#login-step2 .otp-input').forEach(i => i.value = '')
+      document.getElementById('login-verify-error').textContent = ''
     }
 
     function logout() {
       authToken = null
+      currentUser = null
       localStorage.removeItem('authToken')
-      document.getElementById('login-form').style.display = 'block'
+      localStorage.removeItem('currentUser')
+      document.getElementById('auth-container').style.display = 'block'
       document.getElementById('app').style.display = 'none'
-      document.getElementById('password').value = ''
+      resetLogin()
+      resetSignup()
     }
 
     function showApp() {
-      document.getElementById('login-form').style.display = 'none'
+      document.getElementById('auth-container').style.display = 'none'
       document.getElementById('app').style.display = 'block'
-      loadPosts()
+      document.getElementById('user-display').textContent = currentUser.username
+      document.getElementById('profile-link').textContent = 'My Posts'
+      
+      // Check URL for user profile
+      const path = window.location.pathname
+      const match = path.match(/^\/([a-zA-Z0-9_-]+)(?:\/(\d+))?$/)
+      
+      if (match) {
+        const username = match[1]
+        const postId = match[2]
+        viewProfile(username)
+      } else {
+        goHome()
+      }
     }
 
     async function fetchWithAuth(url, options = {}) {
@@ -179,8 +554,17 @@
     }
 
     async function loadPosts() {
-      const res = await fetch('/api/posts')
-      posts = await res.json()
+      let endpoint = '/api/my-posts'
+      
+      if (viewingUser) {
+        endpoint = `/api/posts/${viewingUser}`
+        const res = await fetch(endpoint)
+        posts = await res.json()
+      } else {
+        const res = await fetchWithAuth(endpoint)
+        posts = await res.json()
+      }
+      
       renderPosts()
     }
 
@@ -273,22 +657,25 @@
 
     function renderPosts() {
       const postsEl = document.getElementById('posts')
+      const isOwnProfile = viewingUser === currentUser?.username || (!viewingUser && currentUser)
       
       postsEl.innerHTML = posts.map(post => `
         <div class="post" id="post-${post.id}">
           <div class="post-content">${post.content}</div>
           <div class="post-meta">
-            #${post.id} · ${formatDate(post.created)}
+            <a href="/${post.username}/${post.id}">#${post.id}</a> · ${formatDate(post.created)}
             ${post.edited ? ` · edited ${formatDate(post.edited)}` : ''}
           </div>
-          <div class="post-actions">
-            <button onclick="editPost(${post.id})">Edit</button>
-            <button onclick="deletePost(${post.id})">Delete</button>
-            ${post.versions.length > 0 ? 
-              `<button onclick="toggleVersions(${post.id})">History (${post.versions.length})</button>` : 
-              ''
-            }
-          </div>
+          ${isOwnProfile ? `
+            <div class="post-actions">
+              <button onclick="editPost(${post.id})">Edit</button>
+              <button onclick="deletePost(${post.id})">Delete</button>
+              ${post.versions.length > 0 ? 
+                `<button onclick="toggleVersions(${post.id})">History (${post.versions.length})</button>` : 
+                ''
+              }
+            </div>
+          ` : ''}
           ${post.versions.length > 0 ? `
             <div class="versions" id="versions-${post.id}" style="display: none;">
               <strong>Edit History:</strong>
@@ -303,14 +690,48 @@
             </div>
           ` : ''}
         </div>
-      `).join('')
+      `).join('') || '<p style="text-align: center; color: #666; margin-top: 50px;">No posts yet</p>'
     }
+
+    function goHome(e) {
+      if (e) e.preventDefault()
+      viewingUser = null
+      document.getElementById('page-title').textContent = 'My Thoughts'
+      document.getElementById('new-post').style.display = 'block'
+      history.pushState(null, '', '/')
+      loadPosts()
+    }
+
+    function viewProfile(username, e) {
+      if (e) e.preventDefault()
+      viewingUser = username
+      document.getElementById('page-title').textContent = `@${username}'s thoughts`
+      document.getElementById('new-post').style.display = username === currentUser?.username ? 'block' : 'none'
+      history.pushState(null, '', `/${username}`)
+      loadPosts()
+    }
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', () => {
+      if (currentUser) {
+        showApp()
+      }
+    })
 
     // Submit on Ctrl/Cmd + Enter
     document.getElementById('post-input').addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         createPost()
       }
+    })
+
+    // Enter key handlers for forms
+    document.getElementById('login-email').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendLoginOTP()
+    })
+    
+    document.getElementById('signup-username').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendSignupOTP()
     })
   </script>
 </body>

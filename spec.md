@@ -2,7 +2,7 @@
 
 ## Overview
 
-A personal microblogging platform with radical simplicity at its core. Post short thoughts (max 500 characters) in reverse chronological order with full transparency and edit history.
+A minimalist multi-user microblogging platform with radical simplicity at its core. Users sign up with email OTP authentication and post short thoughts (max 500 characters) in reverse chronological order with full transparency and edit history.
 
 ## Core Principles
 
@@ -15,8 +15,9 @@ A personal microblogging platform with radical simplicity at its core. Post shor
 
 ### Platform
 - **Backend**: Node.js with Express
-- **Database**: JSON file storage
-- **Authentication**: Simple password protection
+- **Database**: JSON file storage (posts.json, users.json)
+- **Authentication**: Email OTP (no passwords)
+- **Email**: Nodemailer with Gmail
 - **Frontend**: Vanilla HTML/CSS/JavaScript
 - **Protocol**: HTTPS only
 
@@ -47,9 +48,11 @@ A personal microblogging platform with radical simplicity at its core. Post shor
 ### Core Functionality
 
 1. **Authentication**
-   - Single password for access
-   - Session tokens stored in localStorage
-   - No user accounts or profiles
+   - Email OTP for signup and login
+   - No passwords stored or required
+   - Session tokens in memory and localStorage
+   - Unique usernames (3-20 chars, alphanumeric + _ -)
+   - User profiles at /username
 
 2. **Posting**
    - Text-only input, 500 character maximum
@@ -111,11 +114,17 @@ A personal microblogging platform with radical simplicity at its core. Post shor
 ### API Endpoints
 
 ```
-POST /api/login         - Authenticate with password
-GET  /api/posts         - Get all posts (public)
-POST /api/post          - Create new post (auth required)
-PUT  /api/post/:id      - Edit post (auth required)
-DELETE /api/post/:id    - Delete post (auth required)
+POST /api/check-username      - Check username availability
+POST /api/signup/send-otp     - Send OTP for signup
+POST /api/signup/verify       - Verify OTP and create account
+POST /api/login/send-otp      - Send OTP for login
+POST /api/login/verify        - Verify OTP and login
+GET  /api/posts/:username     - Get user's posts (public)
+GET  /api/my-posts            - Get current user's posts
+POST /api/post                - Create new post (auth required)
+PUT  /api/post/:id            - Edit post (auth required)
+DELETE /api/post/:id          - Delete post (auth required)
+GET  /api/user/:username      - Get user info (public)
 ```
 
 ### Frontend Requirements
@@ -159,6 +168,8 @@ DELETE /api/post/:id    - Delete post (auth required)
 5. **Storage**: Limited only by disk space
 6. **Post ID Gaps**: Preserved when posts are deleted
 7. **Session Management**: In-memory, clears on restart
+8. **OTP Expiry**: 10 minutes
+9. **Username Rules**: 3-20 chars, letters/numbers/_/-
 
 ## Success Metrics
 
@@ -172,7 +183,7 @@ Success is defined by:
 
 The following are noted but not planned:
 - Database migration (JSON works fine)
-- Multiple users (personal platform)
+- User discovery/search (find by direct URL only)
 - API versioning (single version only)
 - Federation with other instances (violates simplicity)
 
