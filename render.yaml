@@ -1,7 +1,7 @@
 services:
   - type: web
-    name: thoughts-simple
-    runtime: node
+    name: the-random-crap
+    env: node
     buildCommand: npm install
     startCommand: node server.js
     envVars:
