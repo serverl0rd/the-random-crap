@@ -1,6 +1,6 @@
-# ServerLord's Vibe Invoice Generator
+# The Random Crap
 
-A minimalist microblogging platform with email OTP authentication that stores posts in JSON files. Create and share your vibes with the world!
+A minimalist microblogging platform with email OTP authentication that stores posts in JSON files. Post your random crap without filters!
 
 ## Local Development
 
@@ -51,9 +51,9 @@ For Gmail:
 - Your own server
 
 ## Features
-- 500 character vibes (posts)
+- 500 character posts
 - Edit history with version tracking
-- Delete vibes
+- Delete posts
 - Multi-user support with unique usernames
 - Email OTP authentication (no passwords)
 - User profiles at domain.com/username

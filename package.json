@@ -1,5 +1,5 @@
 {
-  "name": "vibe-invoice-generator",
+  "name": "the-random-crap",
   "version": "1.0.0",
   "scripts": {
     "start": "node server.js"
