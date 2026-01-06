@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: thoughts-simple
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: thoughts-data
+      mountPath: /data
+      sizeGB: 1
