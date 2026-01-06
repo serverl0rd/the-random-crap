@@ -27,14 +27,58 @@ const EMAIL_USER = process.env.EMAIL_USER || 'your-email@gmail.com'
 const EMAIL_PASS = process.env.EMAIL_PASS || 'your-app-password'
 const DEV_MODE = process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development'
 
-// Create email transporter
-const transporter = DEV_MODE ? null : nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS
-  }
+// Log configuration (without exposing password)
+console.log('Email Config:', {
+  EMAIL_USER,
+  EMAIL_PASS: EMAIL_PASS ? '***' + EMAIL_PASS.slice(-4) : 'not set',
+  DEV_MODE,
+  NODE_ENV: process.env.NODE_ENV
 })
+
+// Create email transporter
+let transporter = null
+if (!DEV_MODE) {
+  try {
+    // Check if using Gmail or custom SMTP
+    if (EMAIL_USER.includes('@gmail.com')) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: EMAIL_USER,
+          pass: EMAIL_PASS
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      })
+    } else {
+      // For other email providers, use SMTP
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || 587,
+        secure: false,
+        auth: {
+          user: EMAIL_USER,
+          pass: EMAIL_PASS
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      })
+    }
+    
+    // Verify transporter
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('Email transporter verification failed:', error.message)
+      } else {
+        console.log('Email transporter is ready')
+      }
+    })
+  } catch (error) {
+    console.error('Failed to create email transporter:', error.message)
+  }
+}
 
 // In-memory stores
 const sessions = new Map()
@@ -66,6 +110,35 @@ function requireAuth(req, res, next) {
   }
   req.user = sessions.get(token)
   next()
+}
+
+// Email error handler
+function handleEmailError(error, res) {
+  console.error('Email error:', error.message)
+  console.error('Error code:', error.code)
+  console.error('Response:', error.response)
+  
+  let errorMessage = 'Failed to send email'
+  let hint = ''
+  
+  if (error.message.includes('Username and Password not accepted') || error.code === 'EAUTH') {
+    errorMessage = 'Gmail authentication failed'
+    hint = 'Ensure you are using an App Password (16 characters, no spaces) from https://myaccount.google.com/apppasswords'
+  } else if (error.message.includes('self signed certificate')) {
+    errorMessage = 'Email security error'
+    hint = 'Certificate issue - contact support'
+  } else if (error.message.includes('ECONNREFUSED')) {
+    errorMessage = 'Cannot connect to email server'
+    hint = 'Network issue - try again later'
+  } else if (error.message.includes('Invalid login')) {
+    errorMessage = 'Invalid email credentials'
+    hint = 'Check EMAIL_USER and EMAIL_PASS environment variables'
+  }
+  
+  res.status(500).json({ 
+    error: errorMessage,
+    hint: hint || 'You can set DEV_MODE=true to bypass email sending and see OTPs in server logs'
+  })
 }
 
 // Check if username is available
@@ -132,18 +205,7 @@ app.post('/api/signup/send-otp', async (req, res) => {
       res.json({ message: 'OTP sent to email' })
     }
   } catch (error) {
-    console.error('Email error:', error.message)
-    if (DEV_MODE) {
-      res.status(500).json({ 
-        error: 'Email sending failed (DEV_MODE is on but failed). Check server logs.',
-        devMode: true 
-      })
-    } else {
-      res.status(500).json({ 
-        error: 'Failed to send email. Please check email configuration.',
-        hint: 'Set DEV_MODE=true to bypass email sending'
-      })
-    }
+    handleEmailError(error, res)
   }
 })
 
@@ -222,18 +284,7 @@ app.post('/api/login/send-otp', async (req, res) => {
       res.json({ message: 'OTP sent to email' })
     }
   } catch (error) {
-    console.error('Email error:', error.message)
-    if (DEV_MODE) {
-      res.status(500).json({ 
-        error: 'Email sending failed (DEV_MODE is on but failed). Check server logs.',
-        devMode: true 
-      })
-    } else {
-      res.status(500).json({ 
-        error: 'Failed to send email. Please check email configuration.',
-        hint: 'Set DEV_MODE=true to bypass email sending'
-      })
-    }
+    handleEmailError(error, res)
   }
 })
 
