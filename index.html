@@ -454,8 +454,11 @@
           successDiv.textContent = data.message || 'Code sent to your email!'
           document.getElementById('signup-step2').insertBefore(successDiv, document.getElementById('signup-step2').firstChild)
         } else {
-          console.error('Error from server:', data.error)
+          console.error('Error from server:', data)
           errorDiv.textContent = data.error || 'Failed to send code'
+          if (data.hint) {
+            errorDiv.textContent += '. ' + data.hint
+          }
         }
       } catch (err) {
         console.error('Caught error:', err)

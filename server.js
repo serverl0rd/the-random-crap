@@ -132,8 +132,18 @@ app.post('/api/signup/send-otp', async (req, res) => {
       res.json({ message: 'OTP sent to email' })
     }
   } catch (error) {
-    console.error('Email error:', error)
-    res.status(500).json({ error: 'Failed to send email' })
+    console.error('Email error:', error.message)
+    if (DEV_MODE) {
+      res.status(500).json({ 
+        error: 'Email sending failed (DEV_MODE is on but failed). Check server logs.',
+        devMode: true 
+      })
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to send email. Please check email configuration.',
+        hint: 'Set DEV_MODE=true to bypass email sending'
+      })
+    }
   }
 })
 
@@ -212,8 +222,18 @@ app.post('/api/login/send-otp', async (req, res) => {
       res.json({ message: 'OTP sent to email' })
     }
   } catch (error) {
-    console.error('Email error:', error)
-    res.status(500).json({ error: 'Failed to send email' })
+    console.error('Email error:', error.message)
+    if (DEV_MODE) {
+      res.status(500).json({ 
+        error: 'Email sending failed (DEV_MODE is on but failed). Check server logs.',
+        devMode: true 
+      })
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to send email. Please check email configuration.',
+        hint: 'Set DEV_MODE=true to bypass email sending'
+      })
+    }
   }
 })
 
