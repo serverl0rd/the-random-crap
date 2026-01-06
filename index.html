@@ -241,7 +241,7 @@
         <input type="text" id="signup-username" placeholder="Username (3-20 chars)" 
                pattern="[a-zA-Z0-9_-]{3,20}" maxlength="20" />
         <div id="username-check" class="username-check"></div>
-        <button onclick="sendSignupOTP()" id="signup-button">Send Code</button>
+        <button onclick="console.log('Button clicked'); sendSignupOTP()" id="signup-button">Send Code</button>
         <div id="signup-error" class="error"></div>
       </div>
       <div id="signup-step2" style="display: none;">
@@ -290,6 +290,14 @@
     let currentUser = null
     let viewingUser = null
     let usernameCheckTimeout = null
+    
+    // Global error handler
+    window.addEventListener('error', (event) => {
+      console.error('Global error:', event.error)
+    })
+    
+    // Log when page loads
+    console.log('The Random Crap loaded')
 
     // Check if already logged in
     if (authToken) {
@@ -402,30 +410,60 @@
       const email = document.getElementById('signup-email').value
       const username = document.getElementById('signup-username').value
       const errorDiv = document.getElementById('signup-error')
+      const button = document.getElementById('signup-button')
+      
+      console.log('sendSignupOTP called')
       
       if (!email || !username) {
         errorDiv.textContent = 'Please fill in all fields'
         return
       }
       
+      // Disable button and show loading state
+      button.disabled = true
+      button.textContent = 'Sending...'
+      errorDiv.textContent = ''
+      
       try {
+        console.log('Sending request to /api/signup/send-otp')
+        
         const res = await fetch('/api/signup/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, username })
         })
         
-        const data = await res.json()
+        console.log('Response status:', res.status)
+        
+        let data
+        try {
+          data = await res.json()
+        } catch (jsonError) {
+          console.error('Failed to parse JSON:', jsonError)
+          throw new Error('Invalid response from server')
+        }
         
         if (res.ok) {
+          console.log('Success! Moving to OTP step')
           document.getElementById('signup-step1').style.display = 'none'
           document.getElementById('signup-step2').style.display = 'block'
           document.querySelector('#signup-otp-inputs .otp-input').focus()
+          // Show success message
+          const successDiv = document.createElement('div')
+          successDiv.className = 'success'
+          successDiv.textContent = data.message || 'Code sent to your email!'
+          document.getElementById('signup-step2').insertBefore(successDiv, document.getElementById('signup-step2').firstChild)
         } else {
-          errorDiv.textContent = data.error
+          console.error('Error from server:', data.error)
+          errorDiv.textContent = data.error || 'Failed to send code'
         }
       } catch (err) {
-        errorDiv.textContent = 'Failed to send code'
+        console.error('Caught error:', err)
+        errorDiv.textContent = 'Failed to send code: ' + err.message
+      } finally {
+        // Re-enable button
+        button.disabled = false
+        button.textContent = 'Send Code'
       }
     }
 

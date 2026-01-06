@@ -7,6 +7,19 @@ const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Add CORS headers
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200)
+  } else {
+    next()
+  }
+})
+
 app.use(express.static('.'))
 
 // Email configuration - use environment variables in production
@@ -69,6 +82,7 @@ app.post('/api/check-username', (req, res) => {
 
 // Send OTP for signup
 app.post('/api/signup/send-otp', async (req, res) => {
+  console.log('Signup OTP request received:', req.body)
   const { email, username } = req.body
   
   if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
