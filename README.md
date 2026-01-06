@@ -7,21 +7,41 @@ A minimalist microblogging platform with email OTP authentication that stores po
 ```bash
 npm install
 
-# Create .env file with your email settings
+# For development (OTPs logged to console)
+echo "DEV_MODE=true" > .env
+npm start
+
+# For production (real emails)
 cp .env.example .env
 # Edit .env with your Gmail credentials
-
 npm start
 ```
 
 Visit http://localhost:3000
 
+### Development Mode
+
+In development mode, OTP codes are logged to the console instead of being emailed. Look for:
+```
+=== DEVELOPMENT MODE OTP ===
+Email: test@example.com
+OTP Code: 123456
+Username: testuser
+===========================
+```
+
 ## Email Configuration
 
-For Gmail:
-1. Enable 2-factor authentication
+### For Gmail:
+1. Enable 2-factor authentication on your Google account
 2. Generate an app password: https://myaccount.google.com/apppasswords
-3. Use your email and app password in .env
+3. Use your email and the generated app password (not your regular password)
+
+### For Development:
+Set `DEV_MODE=true` to skip email sending and log OTPs to console
+
+### For Other Email Providers:
+Modify the transporter configuration in server.js
 
 ## Deployment Options
 
@@ -31,7 +51,11 @@ For Gmail:
 3. Connect your GitHub account
 4. Click "New Web Service"
 5. Select your repository
-6. Everything auto-configures from render.yaml
+6. Add these environment variables:
+   - `EMAIL_USER`: Your Gmail address
+   - `EMAIL_PASS`: Your Gmail app password (see below)
+   - `DEV_MODE`: Set to `false` for production
+7. Deploy!
 
 ### Option 2: Glitch
 1. Go to [glitch.com](https://glitch.com)

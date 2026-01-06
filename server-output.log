@@ -1,0 +1,14 @@
+
+> the-random-crap@1.0.0 start
+> node server.js
+
+[dotenv@17.2.3] injecting env (1) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+Running on port 3000
+🔧 Development mode enabled - OTPs will be logged to console instead of emailed
+
+=== DEVELOPMENT MODE OTP ===
+Email: test@example.com
+OTP Code: 969689
+Username: testuser123
+===========================
+

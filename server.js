@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const fs = require('fs')
 const crypto = require('crypto')
@@ -11,9 +12,10 @@ app.use(express.static('.'))
 // Email configuration - use environment variables in production
 const EMAIL_USER = process.env.EMAIL_USER || 'your-email@gmail.com'
 const EMAIL_PASS = process.env.EMAIL_PASS || 'your-app-password'
+const DEV_MODE = process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development'
 
 // Create email transporter
-const transporter = nodemailer.createTransport({
+const transporter = DEV_MODE ? null : nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: EMAIL_USER,
@@ -98,14 +100,23 @@ app.post('/api/signup/send-otp', async (req, res) => {
   })
   
   try {
-    await transporter.sendMail({
-      from: EMAIL_USER,
-      to: email,
-      subject: 'Your Random Crap Signup Code',
-      text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
-      html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
-    })
-    res.json({ message: 'OTP sent to email' })
+    if (DEV_MODE) {
+      console.log(`\n=== DEVELOPMENT MODE OTP ===`)
+      console.log(`Email: ${email}`)
+      console.log(`OTP Code: ${otp}`)
+      console.log(`Username: ${username}`)
+      console.log(`===========================\n`)
+      res.json({ message: 'OTP sent to email (check console in dev mode)' })
+    } else {
+      await transporter.sendMail({
+        from: EMAIL_USER,
+        to: email,
+        subject: 'Your Random Crap Signup Code',
+        text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+      })
+      res.json({ message: 'OTP sent to email' })
+    }
   } catch (error) {
     console.error('Email error:', error)
     res.status(500).json({ error: 'Failed to send email' })
@@ -169,14 +180,23 @@ app.post('/api/login/send-otp', async (req, res) => {
   })
   
   try {
-    await transporter.sendMail({
-      from: EMAIL_USER,
-      to: email,
-      subject: 'Your Random Crap Login Code',
-      text: `Your login code is: ${otp}\n\nThis code expires in 10 minutes.`,
-      html: `<p>Your login code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
-    })
-    res.json({ message: 'OTP sent to email' })
+    if (DEV_MODE) {
+      console.log(`\n=== DEVELOPMENT MODE OTP ===`)
+      console.log(`Email: ${email}`)
+      console.log(`OTP Code: ${otp}`)
+      console.log(`Type: Login`)
+      console.log(`===========================\n`)
+      res.json({ message: 'OTP sent to email (check console in dev mode)' })
+    } else {
+      await transporter.sendMail({
+        from: EMAIL_USER,
+        to: email,
+        subject: 'Your Random Crap Login Code',
+        text: `Your login code is: ${otp}\n\nThis code expires in 10 minutes.`,
+        html: `<p>Your login code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p>`
+      })
+      res.json({ message: 'OTP sent to email' })
+    }
   } catch (error) {
     console.error('Email error:', error)
     res.status(500).json({ error: 'Failed to send email' })
@@ -329,4 +349,9 @@ app.get('/:username/:postId', (req, res) => {
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, '0.0.0.0', () => console.log(`Running on port ${PORT}`))
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Running on port ${PORT}`)
+  if (DEV_MODE) {
+    console.log('🔧 Development mode enabled - OTPs will be logged to console instead of emailed')
+  }
+})
