@@ -1,104 +1,113 @@
 # The Random Crap
 
-A minimalist microblogging platform with email OTP authentication that stores posts in JSON files. Post your random crap without filters!
+A minimalist static microblogging platform that uses GitHub for authentication and GitHub Gists for data storage. Post your random crap without filters - completely serverless!
 
-## Local Development
+🌟 **Live Demo**: [https://serverl0rd.github.io/the-random-crap](https://serverl0rd.github.io/the-random-crap)
+
+## ✨ Features
+
+- 🔐 **GitHub Authentication** - No passwords needed, just GitHub tokens
+- 💾 **Persistent Storage** - Data stored in private GitHub Gists
+- 🌍 **Cross-Device Sync** - Access your data from anywhere
+- ✏️ **Post Management** - Create, edit, delete with full version history
+- 👤 **User Profiles** - Personalized pages for each user
+- 📱 **Responsive Design** - Works on mobile and desktop
+- 🚀 **Static Deployment** - No server required, deploy to GitHub Pages
+- 🔒 **Privacy First** - All data stored in private Gists
+
+## 🚀 Quick Setup
+
+### 1. Fork & Deploy
+1. Fork this repository
+2. Go to Settings → Pages
+3. Set Source to "Deploy from a branch" → main
+4. Your app will be live at `https://YOUR_USERNAME.github.io/the-random-crap`
+
+### 2. Authentication
+1. Visit your deployed app
+2. Click the GitHub token link to create a token with "gist" scope
+3. Paste the token and you're ready to go!
+
+## 🛠️ Local Development
 
 ```bash
-npm install
+# Clone the repository
+git clone https://github.com/serverl0rd/the-random-crap.git
+cd the-random-crap
 
-# For development (OTPs logged to console)
-echo "DEV_MODE=true" > .env
-npm start
+# Start local server
+npm run serve
+# or
+python3 -m http.server 8000
 
-# For production (real emails)
-cp .env.example .env
-# Edit .env with your Gmail credentials
-npm start
+# Visit http://localhost:8000
 ```
 
-Visit http://localhost:3000
+## 🔧 How It Works
 
-### Development Mode
+1. **Authentication**: Uses GitHub Personal Access Tokens (only "gist" scope needed)
+2. **Data Storage**: Creates a private Gist to store all your posts
+3. **Synchronization**: Data syncs across all devices using the same token
+4. **Privacy**: Only you can access your private Gist data
 
-In development mode, OTP codes are logged to the console instead of being emailed. Look for:
-```
-=== DEVELOPMENT MODE OTP ===
-Email: test@example.com
-OTP Code: 123456
-Username: testuser
-===========================
-```
+## 📋 GitHub Token Setup
 
-## Email Configuration
+1. Go to [GitHub Settings → Tokens](https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App)
+2. Select **only** the "gist" scope
+3. Generate and copy the token
+4. Paste it into the app when prompted
 
-### Option 1: Resend (Recommended - Most Reliable)
-1. Sign up at [resend.com](https://resend.com) (free)
-2. Get your API key from the dashboard
-3. Set environment variables:
-   - `RESEND_API_KEY`: Your API key (starts with `re_`)
-   - `FROM_EMAIL`: `onboarding@resend.dev` (or your verified domain)
-4. That's it! No complex passwords or 2FA needed
+## 🎯 Benefits Over Traditional Apps
 
-### Option 2: Gmail (Can be unreliable)
-1. Enable 2-factor authentication on your Google account
-2. Generate an app password: https://myaccount.google.com/apppasswords
-3. Enter the 16-character password WITHOUT spaces
-4. Set environment variables:
-   - `EMAIL_USER`: Your Gmail address
-   - `EMAIL_PASS`: The app password (no spaces!)
+- ✅ **No server costs** - Completely static
+- ✅ **No database setup** - Uses GitHub's infrastructure
+- ✅ **Automatic backups** - GitHub handles data safety
+- ✅ **Version control** - Built-in post history
+- ✅ **Global availability** - GitHub's CDN
+- ✅ **No registration** - Uses existing GitHub accounts
 
-### Option 3: Development Mode
-Set `DEV_MODE=true` to skip emails and show OTPs in console/logs
+## 🔒 Security & Privacy
 
-### Why Resend?
-- Built specifically for developers
-- 100 free emails/day
-- Works instantly, no authentication issues
-- Better deliverability than Gmail SMTP
-- Simple API, no complex configuration
+- Tokens stored locally in your browser only
+- Gists are private and encrypted by GitHub
+- Minimal permissions required (just "gist" scope)
+- You can revoke access anytime in GitHub settings
+- No tracking or analytics
 
-## Deployment Options
 
-### Option 1: Render (Recommended - Free)
-1. Push this code to GitHub
-2. Go to [render.com](https://render.com)
-3. Connect your GitHub account
-4. Click "New Web Service"
-5. Select your repository
-6. Add these environment variables:
-   - `EMAIL_USER`: Your Gmail address
-   - `EMAIL_PASS`: Your Gmail app password (see below)
-   - `DEV_MODE`: Set to `false` for production
-7. Deploy!
+## 📱 Usage
 
-### Option 2: Glitch
-1. Go to [glitch.com](https://glitch.com)
-2. Click "New Project" → "Import from GitHub"
-3. Paste your repo URL
-4. It's automatically live!
+1. **Create Posts**: Write up to 500 characters
+2. **Edit History**: Full version tracking for all edits
+3. **User Profiles**: Visit `/username` to see someone's posts
+4. **Cross-Device**: Same token works on all your devices
 
-### Option 3: Railway
-1. Go to [railway.app](https://railway.app)
-2. Click "Start a New Project"
-3. Choose "Deploy from GitHub repo"
-4. Add a volume for persistent storage
+## 🛡️ Troubleshooting
 
-### Option 4: Deploy Anywhere
-- Any VPS with Node.js
-- Heroku free tier (if available)
-- Your own server
+**Token Issues?**
+- Ensure you selected the "gist" scope
+- Check token hasn't expired
+- Try generating a new token
 
-## Features
-- 500 character posts
-- Edit history with version tracking
-- Delete posts
-- Multi-user support with unique usernames
-- Email OTP authentication (no passwords)
-- User profiles at domain.com/username
-- Persistent JSON storage
-- Session-based authentication
+**Data Missing?**
+- Check your [GitHub Gists](https://gist.github.com) page
+- Look for "The Random Crap - User Data"
+- Use the same token on all devices
 
-## Credits
+## 🎨 Customization
+
+- Edit `index.html` to change styling or features
+- Modify `package.json` for your repository URLs
+- Update footer links and branding
+
+## 📄 License
+
+MIT License - Feel free to use and modify!
+
+## 👨‍💻 Credits
 
 Created by [@ServerLord](https://serverlord.in) ([Atharva Kulkarni](https://atharvakulkarni.link))
+
+---
+
+⭐ **Star this repo** if you find it useful!
