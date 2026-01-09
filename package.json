@@ -1,16 +1,17 @@
 {
   "name": "the-random-crap",
   "version": "1.0.0",
+  "description": "A simple static micro-blogging platform",
   "scripts": {
-    "start": "node server.js"
+    "build": "echo 'Static site - no build needed'",
+    "serve": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000"
   },
-  "dependencies": {
-    "dotenv": "^17.2.3",
-    "express": "^4.18.2",
-    "nodemailer": "^6.9.7",
-    "resend": "^6.6.0"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_USERNAME/the-random-crap.git"
   },
-  "devDependencies": {
-    "puppeteer": "^24.34.0"
-  }
+  "homepage": "https://YOUR_USERNAME.github.io/the-random-crap/",
+  "keywords": ["blog", "static-site", "github-pages"],
+  "author": "Atharva Kulkarni",
+  "license": "MIT"
 }
