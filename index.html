@@ -254,7 +254,7 @@
     
     <!-- GitHub Authentication Form -->
     <div id="auth-form" class="auth-form">
-      <h3 style="text-align: center; margin-bottom: 20px;">Sign In with GitHub</h3>
+      <h3 style="text-align: center; margin-bottom: 20px;">Sign In</h3>
       <input type="text" id="github-username" placeholder="GitHub Username" pattern="[a-zA-Z0-9_\-]{1,39}" maxlength="39" />
       <div class="password-container">
         <input type="password" id="github-token" placeholder="GitHub Token" />
@@ -264,10 +264,11 @@
       <div id="auth-error" class="error"></div>
       <div class="info">
         <small>
+          <strong>New or returning user?</strong> Just sign in with your GitHub credentials.<br><br>
           <strong>How to get your GitHub token:</strong><br>
           1. Go to <a href="https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App" target="_blank">GitHub Token Settings</a><br>
           2. Generate a new token with 'gist' scope<br>
-          3. Use your actual GitHub username and the token above
+          3. Use your GitHub username and token above
         </small>
       </div>
     </div>
@@ -533,6 +534,14 @@
       }
     }
 
+    // Admin function to clear all data and start fresh
+    window.clearAllData = function() {
+      if (confirm('⚠️ This will permanently delete ALL posts and user data. Are you sure?')) {
+        localStorage.clear()
+        location.reload()
+        console.log('✅ All data cleared. Starting fresh!')
+      }
+    }
 
     // Handle redirects from 404.html for GitHub Pages SPA routing
     const urlParams = new URLSearchParams(window.location.search)
@@ -669,23 +678,23 @@
           created: new Date().toISOString()
         }
         
-        // Find or create user's gist
+        // Find existing gist or we'll create one on first post
         dataGistId = await findUserGist(githubToken, username)
         
-        // Load existing data or create new
+        // Load existing data if available
         let userData = { posts: [], user: currentUser }
         if (dataGistId) {
           try {
             userData = await loadDataFromGist()
             currentUser = userData.user || currentUser
             posts = userData.posts || []
+            console.log(`Welcome back! Loaded ${posts.length} existing posts.`)
           } catch (error) {
-            console.log('Could not load existing data, starting fresh')
+            console.log('Starting fresh - no existing data found')
           }
+        } else {
+          console.log('New user - gist will be created when you make your first post')
         }
-        
-        // Ensure data is saved
-        await saveDataToGist(userData)
         
         // Save to localStorage
         localStorage.setItem('currentUser', JSON.stringify(currentUser))
