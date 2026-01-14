@@ -314,7 +314,7 @@
     </div>
     
     <div class="nav-links" id="nav-links">
-      <a href="/" onclick="goHome(event)">Home</a>
+      <a href="#" onclick="goHome(event)">Home</a>
       <a href="#" onclick="viewProfile(currentUser?.username, event)" id="profile-link">My Posts</a>
     </div>
 
@@ -447,22 +447,37 @@
     const urlParams = new URLSearchParams(window.location.search)
     const redirectPath = urlParams.get('redirect')
     
-    // Check if already logged in
-    if (currentUser && githubToken) {
-      loadDataFromGist().then(data => {
-        posts = data.posts || []
-        showApp()
-        
-        // Handle redirect after login
-        if (redirectPath) {
-          // Remove redirect param from URL
-          const newUrl = window.location.pathname
-          window.history.replaceState({}, document.title, newUrl)
+    // Check if this is a public profile URL
+    const path = window.location.pathname
+    const segments = path.split('/').filter(Boolean)
+    const isPublicProfile = segments.length >= 1 && segments[segments.length - 1].match(/^[a-zA-Z0-9_-]+$/) && segments[segments.length - 1] !== 'the-random-crap'
+    
+    console.log('Initial route check:', { path, segments, isPublicProfile, currentUser: !!currentUser })
+    
+    // Check if already logged in OR if this is a public profile page
+    if ((currentUser && githubToken) || isPublicProfile) {
+      if (currentUser && githubToken) {
+        // Logged in user
+        loadDataFromGist().then(data => {
+          posts = data.posts || []
+          showApp()
           
-          // Navigate to the requested profile
-          viewProfile(redirectPath)
-        }
-      })
+          // Handle redirect after login
+          if (redirectPath) {
+            // Remove redirect param from URL
+            const newUrl = window.location.pathname
+            window.history.replaceState({}, document.title, newUrl)
+            
+            // Navigate to the requested profile
+            viewProfile(redirectPath)
+          }
+        })
+      } else {
+        // Public profile access (not logged in)
+        console.log('Showing public profile without login')
+        posts = [] // No posts array for anonymous users
+        showApp() // This will detect it's a public profile and show accordingly
+      }
     } else if (redirectPath) {
       // Store redirect for after login
       localStorage.setItem('pendingRedirect', redirectPath)
@@ -727,36 +742,153 @@
     })
 
     function showApp() {
+      const path = window.location.pathname
+      console.log('Full URL path:', path)
+      console.log('Current user:', currentUser?.username)
+      
+      // Extract username from URL
+      const segments = path.split('/').filter(Boolean)
+      let profileUsername = null
+      
+      // For URLs like /serverl0rd or /the-random-crap/serverl0rd, extract "serverl0rd" 
+      if (segments.length >= 1) {
+        profileUsername = segments[segments.length - 1]
+      }
+      
+      console.log('Profile username from URL:', profileUsername)
+      
+      // If we're viewing a profile page (any username in URL)
+      if (profileUsername && profileUsername !== 'the-random-crap' && profileUsername.match(/^[a-zA-Z0-9_-]+$/)) {
+        showPublicProfile(profileUsername)
+      } else {
+        // Show regular logged-in app
+        showLoggedInApp()
+      }
+    }
+    
+    function showPublicProfile(username) {
+      console.log('Showing public profile for:', username)
+      
+      // Hide auth container
+      document.getElementById('auth-container').style.display = 'none'
+      
+      // Show app container but hide logged-in elements
+      document.getElementById('app').style.display = 'block'
+      
+      // Hide all logged-in interface elements
+      document.querySelector('.header').style.display = 'none'
+      document.getElementById('nav-links').style.display = 'none'
+      document.getElementById('new-post').style.display = 'none'
+      
+      // Set clean title
+      document.getElementById('page-title').textContent = `@${username}'s crap`
+      document.getElementById('page-title').style.display = 'block'
+      document.getElementById('page-title').style.textAlign = 'center'
+      document.getElementById('page-title').style.margin = '40px 0'
+      
+      // Set viewing state
+      viewingUser = username
+      
+      // Add navigation back to app if logged in
+      if (currentUser) {
+        const backLink = document.createElement('div')
+        backLink.innerHTML = `<a href="#" onclick="showLoggedInApp(); return false;" style="position: fixed; top: 20px; right: 20px; background: #000; color: #fff; padding: 10px 15px; text-decoration: none; border-radius: 4px; font-size: 14px;">← Dashboard</a>`
+        document.body.appendChild(backLink)
+      }
+      
+      // Load posts for this user
+      if (username === currentUser?.username && githubToken) {
+        // If viewing own profile AND logged in, load from Gist
+        console.log('Loading own profile posts from Gist...')
+        loadDataFromGist().then(data => {
+          if (data.posts) {
+            posts = data.posts
+            console.log('Loaded posts from Gist:', data.posts.length)
+          }
+          loadPosts()
+        }).catch(error => {
+          console.error('Failed to load from Gist:', error)
+          loadPosts()
+        })
+      } else {
+        // If viewing someone else's profile OR not logged in
+        console.log('Cannot load posts - either not logged in or viewing different user')
+        
+        // Show a message about logging in to see posts
+        const postsEl = document.getElementById('posts')
+        if (!currentUser) {
+          const basePath = getBasePath()
+          postsEl.innerHTML = `
+            <div style="text-align: center; margin-top: 50px; color: #666;">
+              <p>To view posts, please <a href="${basePath}/" style="color: #000; text-decoration: underline;">sign in</a></p>
+            </div>
+          `
+        } else {
+          postsEl.innerHTML = '<p style="text-align: center; color: #666; margin-top: 50px;">No posts yet</p>'
+        }
+      }
+    }
+    
+    function showLoggedInApp() {
+      console.log('Showing logged-in app interface')
+      
+      // Clean up any back links
+      const existingBackLinks = document.querySelectorAll('div a[onclick*="showLoggedInApp"]')
+      existingBackLinks.forEach(link => link.parentElement.remove())
+      
       document.getElementById('auth-container').style.display = 'none'
       document.getElementById('app').style.display = 'block'
       document.getElementById('user-display').textContent = `@${currentUser.username}`
       document.getElementById('profile-link').textContent = 'My Posts'
       
-      // Check URL for user profile
-      const path = window.location.pathname
-      const match = path.match(/^\/([a-zA-Z0-9_-]+)(?:\/(\d+))?$/)
+      // Show all logged-in interface elements
+      document.querySelector('.header').style.display = 'flex'
+      document.getElementById('nav-links').style.display = 'flex'
+      document.getElementById('new-post').style.display = 'block'
       
-      if (match) {
-        const username = match[1]
-        const postId = match[2]
-        viewProfile(username)
-      } else {
-        goHome()
-      }
+      // Reset title styling
+      document.getElementById('page-title').style.textAlign = ''
+      document.getElementById('page-title').style.margin = ''
+      
+      goHome()
     }
 
-    function loadPosts() {
-      let filteredPosts
+    async function loadPosts() {
+      console.log('loadPosts called:', { viewingUser, currentUser: currentUser?.username, postsLength: posts.length })
+      
+      let filteredPosts = []
       
       if (viewingUser) {
+        // When viewing a profile (including your own)
         filteredPosts = posts.filter(p => p.username === viewingUser)
+        console.log('Filtered posts for', viewingUser, ':', filteredPosts.length)
+        
+        // If no posts found and we're viewing our own profile, try to reload from Gist
+        if (filteredPosts.length === 0 && viewingUser === currentUser?.username) {
+          console.log('No posts found for own profile, trying to reload from Gist...')
+          try {
+            const data = await loadDataFromGist()
+            if (data.posts && data.posts.length > 0) {
+              console.log('Loaded', data.posts.length, 'posts from Gist')
+              posts = data.posts
+              filteredPosts = posts.filter(p => p.username === viewingUser)
+            } else {
+              console.log('No posts found in Gist data')
+            }
+          } catch (error) {
+            console.log('Could not load data from Gist:', error)
+          }
+        }
       } else {
+        // Home view - show own posts
         filteredPosts = posts.filter(p => p.username === currentUser?.username)
+        console.log('Home view - filtered posts:', filteredPosts.length)
       }
       
       // Sort by creation date, newest first
       filteredPosts.sort((a, b) => new Date(b.created) - new Date(a.created))
       
+      console.log('Final filtered posts to render:', filteredPosts.length)
       renderPosts(filteredPosts)
     }
 
@@ -885,18 +1017,37 @@
       return new Date(dateStr).toLocaleString()
     }
 
+    function getBasePath() {
+      const pathname = window.location.pathname
+      
+      // For GitHub Pages, detect the repository name
+      if (window.location.hostname.includes('github.io')) {
+        const segments = pathname.split('/').filter(Boolean)
+        if (segments.length > 0) {
+          return '/' + segments[0]
+        }
+      }
+      
+      // For custom domains or when on root, use current directory
+      const pathWithoutFile = pathname.split('/').slice(0, -1).join('/')
+      return pathWithoutFile || ''
+    }
+
     function renderPosts(postsToRender) {
       const postsEl = document.getElementById('posts')
-      const isOwnProfile = viewingUser === currentUser?.username || (!viewingUser && currentUser)
+      
+      // Check if we're in public profile mode (header is hidden)
+      const isPublicView = document.querySelector('.header').style.display === 'none'
+      const basePath = getBasePath()
       
       postsEl.innerHTML = postsToRender.map(post => `
         <div class="post" id="post-${post.id}">
           <div class="post-content">${post.content}</div>
           <div class="post-meta">
-            <a href="/${post.username}/${post.id}">#${post.id}</a> · ${formatDate(post.created)}
+            ${isPublicView ? `#${post.id}` : `<a href="${basePath}/${post.username}/${post.id}">#${post.id}</a>`} · ${formatDate(post.created)}
             ${post.edited ? ` · edited ${formatDate(post.edited)}` : ''}
           </div>
-          ${isOwnProfile ? `
+          ${!isPublicView && viewingUser === currentUser?.username ? `
             <div class="post-actions">
               <button onclick="editPost(${post.id})">Edit</button>
               <button onclick="deletePost(${post.id})">Delete</button>
@@ -928,16 +1079,25 @@
       viewingUser = null
       document.getElementById('page-title').textContent = 'The Random Crap'
       document.getElementById('new-post').style.display = 'block'
-      history.pushState(null, '', '/')
+      // Use relative path for GitHub Pages compatibility
+      const basePath = getBasePath()
+      history.pushState(null, '', basePath + '/')
       loadPosts()
     }
 
     function viewProfile(username, e) {
       if (e) e.preventDefault()
+      
+      // Fix GitHub Pages URL issue - extract just the username
+      if (username && username.includes('/')) {
+        username = username.split('/').pop() // Take the last part after any slashes
+      }
       viewingUser = username
       document.getElementById('page-title').textContent = `@${username}'s crap`
       document.getElementById('new-post').style.display = username === currentUser?.username ? 'block' : 'none'
-      history.pushState(null, '', `/${username}`)
+      // Use relative path for GitHub Pages compatibility
+      const basePath = getBasePath()
+      history.pushState(null, '', `${basePath}/${username}`)
       loadPosts()
     }
 
