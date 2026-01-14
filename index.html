@@ -543,6 +543,62 @@
       }
     }
 
+    // Debug function for authentication issues
+    window.debugAuth = async function(username, token) {
+      console.log('🔧 Debug: Testing authentication...')
+      console.log('Username:', username)
+      console.log('Token:', token ? 'Provided (hidden)' : 'Missing')
+      
+      try {
+        console.log('1. Testing GitHub API access...')
+        const response = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        })
+        
+        if (response.ok) {
+          const user = await response.json()
+          console.log('✅ GitHub API access successful')
+          console.log('API User:', user.login)
+          console.log('Expected:', username)
+          console.log('Match:', user.login === username)
+          
+          if (user.login !== username) {
+            console.log('❌ Username mismatch! Use:', user.login)
+            return false
+          }
+          
+          console.log('2. Testing gist access...')
+          const gistsResponse = await fetch('https://api.github.com/gists', {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          })
+          
+          if (gistsResponse.ok) {
+            console.log('✅ Gist access successful')
+            const gists = await gistsResponse.json()
+            console.log(`Found ${gists.length} gists`)
+            return true
+          } else {
+            console.log('❌ Gist access failed:', gistsResponse.status)
+            return false
+          }
+        } else {
+          console.log('❌ GitHub API access failed:', response.status)
+          const error = await response.text()
+          console.log('Error:', error)
+          return false
+        }
+      } catch (error) {
+        console.log('❌ Debug failed:', error)
+        return false
+      }
+    }
+
     // Handle redirects from 404.html for GitHub Pages SPA routing
     const urlParams = new URLSearchParams(window.location.search)
     const redirectPath = urlParams.get('redirect')
@@ -644,6 +700,42 @@
       document.getElementById('reset-form').style.display = tab === 'reset' ? 'block' : 'none'
     }
 
+    // Test GitHub token validity
+    async function testGithubToken(token, expectedUsername) {
+      try {
+        const response = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        })
+        
+        if (!response.ok) {
+          console.error('GitHub API error:', response.status)
+          return false
+        }
+        
+        const user = await response.json()
+        if (user.login !== expectedUsername) {
+          console.error(`Username mismatch: expected ${expectedUsername}, got ${user.login}`)
+          return false
+        }
+        
+        // Test gist scope
+        const gistsResponse = await fetch('https://api.github.com/gists', {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        })
+        
+        return gistsResponse.ok
+      } catch (error) {
+        console.error('Token test error:', error)
+        return false
+      }
+    }
+
     // GitHub Authentication
     async function authenticateWithGitHub() {
       const username = document.getElementById('github-username').value.trim()
@@ -711,7 +803,7 @@
         }
       } catch (error) {
         console.error('Authentication error:', error)
-        errorDiv.textContent = 'Authentication failed. Please try again.'
+        errorDiv.textContent = `Authentication failed: ${error.message}. Try the debug function: debugAuth('${username}', 'your-token')`
       }
     }
 
