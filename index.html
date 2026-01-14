@@ -451,7 +451,7 @@
     const path = window.location.pathname
     const segments = path.split('/').filter(Boolean)
     const pathProfile = segments.length >= 1 && segments[segments.length - 1].match(/^[a-zA-Z0-9_-]+$/) && segments[segments.length - 1] !== 'the-random-crap'
-    const redirectProfile = redirectPath && redirectPath.match(/^[a-zA-Z0-9_-]+$/) && redirectPath !== 'the-random-crap'
+    const redirectProfile = redirectPath && redirectPath.split('?')[0].match(/^[a-zA-Z0-9_-]+$/) && redirectPath.split('?')[0] !== 'the-random-crap'
     const isPublicProfile = pathProfile || redirectProfile
     
     console.log('Initial route check:', { path, segments, pathProfile, redirectPath, redirectProfile, isPublicProfile, currentUser: !!currentUser })
@@ -481,10 +481,11 @@
         
         // Clean up URL if coming from redirect
         if (redirectPath) {
+          const cleanUsername = redirectPath.split('?')[0] // Remove any query params
           const newUrl = window.location.pathname
           window.history.replaceState({}, document.title, newUrl)
           // Set the URL to the profile path for proper detection
-          window.history.replaceState({}, document.title, newUrl + redirectPath)
+          window.history.replaceState({}, document.title, newUrl + cleanUsername)
         }
         
         showApp() // This will detect it's a public profile and show accordingly
