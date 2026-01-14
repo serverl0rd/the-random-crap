@@ -9,11 +9,26 @@
     // This script takes the current path and redirects to the main app
     // with the path as a parameter so the app can handle routing
     
-    const path = window.location.pathname.slice(1) // Remove leading slash
-    const search = window.location.search
+    const fullPath = window.location.pathname
+    const pathSegments = fullPath.split('/').filter(Boolean)
     
-    // Redirect to main app with the path as a parameter
-    window.location.replace('/the-random-crap/' + (path ? '?redirect=' + encodeURIComponent(path) : '') + (search || ''))
+    // Detect if we're on GitHub Pages (has repo name) or custom domain
+    let basePath = '/'
+    if (pathSegments.length > 0 && window.location.hostname.includes('github.io')) {
+      // GitHub Pages: first segment is the repository name
+      basePath = '/' + pathSegments[0] + '/'
+      // The path to redirect is everything after the repo name
+      const redirectPath = pathSegments.slice(1).join('/')
+      const search = window.location.search
+      
+      // Redirect to main app with the path as a parameter
+      window.location.replace(basePath + (redirectPath ? '?redirect=' + encodeURIComponent(redirectPath) : '') + (search || ''))
+    } else {
+      // Custom domain or local - redirect to root
+      const redirectPath = pathSegments.join('/')
+      const search = window.location.search
+      window.location.replace(basePath + (redirectPath ? '?redirect=' + encodeURIComponent(redirectPath) : '') + (search || ''))
+    }
   </script>
 </head>
 <body>
