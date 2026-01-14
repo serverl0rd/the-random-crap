@@ -483,6 +483,24 @@
       }
     }
 
+    async function makeGistPublic() {
+      // Function to make an existing private gist public
+      if (!dataGistId || !githubToken) {
+        console.log('No gist to update or not logged in')
+        return false
+      }
+      
+      try {
+        const currentData = await loadDataFromGist()
+        await saveDataToGist(currentData) // This will update the gist to public: true
+        console.log('Gist updated to public visibility')
+        return true
+      } catch (error) {
+        console.error('Failed to make gist public:', error)
+        return false
+      }
+    }
+
     // Handle redirects from 404.html for GitHub Pages SPA routing
     const urlParams = new URLSearchParams(window.location.search)
     const redirectPath = urlParams.get('redirect')
@@ -500,8 +518,17 @@
     if ((currentUser && githubToken) || isPublicProfile) {
       if (currentUser && githubToken) {
         // Logged in user
-        loadDataFromGist().then(data => {
+        loadDataFromGist().then(async (data) => {
           posts = data.posts || []
+          
+          // Ensure the gist is public for sharing
+          try {
+            await makeGistPublic()
+            console.log('User gist updated to public visibility')
+          } catch (error) {
+            console.log('Could not update gist visibility:', error.message)
+          }
+          
           showApp()
           
           // Handle redirect after login
@@ -852,11 +879,20 @@
       if (username === currentUser?.username && githubToken) {
         // If viewing own profile AND logged in, load from private Gist
         console.log('Loading own profile posts from Gist...')
-        loadDataFromGist().then(data => {
+        loadDataFromGist().then(async (data) => {
           if (data.posts) {
             posts = data.posts
             console.log('Loaded posts from Gist:', data.posts.length)
           }
+          
+          // Ensure the gist is public so others can view it
+          try {
+            await makeGistPublic()
+            console.log('Gist visibility updated to public')
+          } catch (error) {
+            console.log('Could not update gist visibility:', error.message)
+          }
+          
           loadPosts()
         }).catch(error => {
           console.error('Failed to load from Gist:', error)
