@@ -229,6 +229,10 @@
         </a>
       </div>
       <button onclick="authenticateWithGitHub()">Connect with GitHub</button>
+      <div class="info">
+        <small>💡 <strong>Quick Access:</strong> Bookmark this URL to skip authentication: 
+        <br><code id="quick-url">https://serverl0rd.github.io/the-random-crap/?token=YOUR_TOKEN_HERE</code></small>
+      </div>
       <div id="auth-error" class="error"></div>
       <div id="auth-success" class="success"></div>
     </div>
@@ -340,6 +344,16 @@
         console.error('Failed to save data to gist:', error)
         throw error
       }
+    }
+
+    // Check URL for token parameter
+    const urlParams = new URLSearchParams(window.location.search)
+    const urlToken = urlParams.get('token')
+    if (urlToken && !githubToken) {
+      githubToken = urlToken
+      localStorage.setItem('githubToken', githubToken)
+      // Remove token from URL for security
+      window.history.replaceState({}, document.title, window.location.pathname)
     }
 
     // Check if already logged in
