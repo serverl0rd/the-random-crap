@@ -316,6 +316,7 @@
     <div class="nav-links" id="nav-links">
       <a href="#" onclick="goHome(event)">Home</a>
       <a href="#" onclick="viewProfile(currentUser?.username, event)" id="profile-link">My Posts</a>
+      <a href="#" onclick="makePostsPublic(event)" id="make-public-link" style="color: #666; font-size: 12px;">Make Posts Public</a>
     </div>
 
     <div id="new-post">
@@ -498,6 +499,30 @@
       } catch (error) {
         console.error('Failed to make gist public:', error)
         return false
+      }
+    }
+
+    async function makePostsPublic(e) {
+      if (e) e.preventDefault()
+      
+      try {
+        console.log('Making posts public...')
+        const success = await makeGistPublic()
+        
+        if (success) {
+          alert('✅ Posts are now public! Others can view them at your profile page.')
+          // Update the button text to show it's done
+          const button = document.getElementById('make-public-link')
+          if (button) {
+            button.textContent = '✅ Posts Public'
+            button.style.color = '#4CAF50'
+          }
+        } else {
+          alert('❌ Failed to make posts public. Please try again.')
+        }
+      } catch (error) {
+        console.error('Error making posts public:', error)
+        alert('❌ Error making posts public. Check console for details.')
       }
     }
 
@@ -912,13 +937,14 @@
             const basePath = getBasePath()
             postsEl.innerHTML = `
               <div style="text-align: center; margin-top: 50px; color: #666;">
-                <p>No public posts yet.</p>
+                <p>No public posts yet for @${username}.</p>
                 <div style="margin-top: 20px;">
                   <a href="${basePath}/" style="color: #000; text-decoration: underline; margin-right: 20px;">Sign In</a>
                   <span style="color: #999;">or</span>
                   <a href="${basePath}/" style="color: #000; text-decoration: underline; margin-left: 20px;">Sign Up</a>
                 </div>
                 <p style="font-size: 14px; margin-top: 15px; color: #999;">Join to start posting and see more content!</p>
+                ${username !== 'serverl0rd' ? '' : '<p style="font-size: 12px; margin-top: 10px; color: #bbb;">If you\'re the owner, log in to make your posts public.</p>'}
               </div>
             `
           }
