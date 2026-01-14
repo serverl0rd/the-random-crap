@@ -367,7 +367,25 @@
         throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
       }
       
-      return response.json()
+      return await response.json()
+    }
+
+    async function githubPublicRequest(url, options = {}) {
+      // For public API requests that don't require authentication
+      const response = await fetch(`https://api.github.com${url}`, {
+        ...options,
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
+      }
+      
+      return await response.json()
     }
 
     async function loadDataFromGist() {
@@ -386,7 +404,7 @@
     async function saveDataToGist(data) {
       const gistData = {
         description: `The Random Crap - ${currentUser.username}'s Data`,
-        public: false,
+        public: true, // Make gists public so they can be viewed anonymously
         files: {
           'user_data.json': {
             content: JSON.stringify(data, null, 2)
@@ -440,6 +458,28 @@
         return userGist?.id || null
       } catch (error) {
         return null
+      }
+    }
+
+    async function loadPublicPostsForUser(username) {
+      try {
+        // Find public gists by this user (no auth required for public gists)
+        const userGists = await githubPublicRequest(`/users/${username}/gists`)
+        const userDataGist = userGists.find(gist => 
+          gist.description === `The Random Crap - ${username}'s Data` && gist.public
+        )
+        
+        if (!userDataGist) {
+          console.log(`No public gist found for ${username}`)
+          return []
+        }
+        
+        const gistData = await githubPublicRequest(`/gists/${userDataGist.id}`)
+        const data = JSON.parse(gistData.files['user_data.json'].content)
+        return data.posts || []
+      } catch (error) {
+        console.error(`Failed to load public posts for ${username}:`, error)
+        return []
       }
     }
 
@@ -810,7 +850,7 @@
       
       // Load posts for this user
       if (username === currentUser?.username && githubToken) {
-        // If viewing own profile AND logged in, load from Gist
+        // If viewing own profile AND logged in, load from private Gist
         console.log('Loading own profile posts from Gist...')
         loadDataFromGist().then(data => {
           if (data.posts) {
@@ -823,21 +863,44 @@
           loadPosts()
         })
       } else {
-        // If viewing someone else's profile OR not logged in
-        console.log('Cannot load posts - either not logged in or viewing different user')
-        
-        // Show a message about logging in to see posts
-        const postsEl = document.getElementById('posts')
-        if (!currentUser) {
+        // Load public posts for this user (works for anonymous visitors)
+        console.log(`Loading public posts for ${username}...`)
+        loadPublicPostsForUser(username).then(publicPosts => {
+          if (publicPosts.length > 0) {
+            posts = publicPosts
+            console.log(`Loaded ${publicPosts.length} public posts for ${username}`)
+            loadPosts()
+          } else {
+            // Show message with sign-up/login options
+            const postsEl = document.getElementById('posts')
+            const basePath = getBasePath()
+            postsEl.innerHTML = `
+              <div style="text-align: center; margin-top: 50px; color: #666;">
+                <p>No public posts yet.</p>
+                <div style="margin-top: 20px;">
+                  <a href="${basePath}/" style="color: #000; text-decoration: underline; margin-right: 20px;">Sign In</a>
+                  <span style="color: #999;">or</span>
+                  <a href="${basePath}/" style="color: #000; text-decoration: underline; margin-left: 20px;">Sign Up</a>
+                </div>
+                <p style="font-size: 14px; margin-top: 15px; color: #999;">Join to start posting and see more content!</p>
+              </div>
+            `
+          }
+        }).catch(error => {
+          console.error(`Failed to load public posts for ${username}:`, error)
+          const postsEl = document.getElementById('posts')
           const basePath = getBasePath()
           postsEl.innerHTML = `
             <div style="text-align: center; margin-top: 50px; color: #666;">
-              <p>To view posts, please <a href="${basePath}/" style="color: #000; text-decoration: underline;">sign in</a></p>
+              <p>Could not load posts.</p>
+              <div style="margin-top: 20px;">
+                <a href="${basePath}/" style="color: #000; text-decoration: underline; margin-right: 20px;">Sign In</a>
+                <span style="color: #999;">or</span>
+                <a href="${basePath}/" style="color: #000; text-decoration: underline; margin-left: 20px;">Sign Up</a>
+              </div>
             </div>
           `
-        } else {
-          postsEl.innerHTML = '<p style="text-align: center; color: #666; margin-top: 50px;">No posts yet</p>'
-        }
+        })
       }
     }
     
