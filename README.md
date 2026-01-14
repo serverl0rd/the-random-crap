@@ -87,7 +87,7 @@ python3 -m http.server 8000
 - All posts are public by design
 
 ### **Account Management**
-- **Forgot Password?** Generate new GitHub token
+- **Forgot Password?** Click link below password field → Generate new GitHub token
 - **Multi-device?** Same username/password everywhere
 - **Data export?** Download your GitHub Gist
 
@@ -110,9 +110,10 @@ python3 -m http.server 8000
 - Try generating a new token
 
 **Lost Password?**
-1. Click "Reset Password"
-2. Generate new GitHub token
-3. Use same username/email with new token
+1. Click "Forgot Password?" link below password field
+2. Enter your email address  
+3. Generate new GitHub token following instructions
+4. Use same username/email with new token
 
 ## 🎨 For Developers
 
