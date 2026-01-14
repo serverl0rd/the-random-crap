@@ -139,6 +139,25 @@
     .forgot-password a:hover {
       text-decoration: underline;
     }
+    .password-container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      user-select: none;
+      color: #666;
+      font-size: 14px;
+      padding: 5px;
+    }
+    .password-toggle:hover {
+      color: #333;
+    }
     .otp-inputs {
       display: flex;
       gap: 10px;
@@ -240,7 +259,10 @@
     <!-- Login Form -->
     <div id="login-form" class="auth-form">
       <input type="text" id="login-username" placeholder="Username or Email" />
-      <input type="password" id="login-password" placeholder="Password" />
+      <div class="password-container">
+        <input type="password" id="login-password" placeholder="Password" />
+        <span class="password-toggle" onclick="togglePassword('login-password')" title="Show/Hide Password">👁</span>
+      </div>
       <div class="forgot-password">
         <a href="#" onclick="showTab('reset'); return false;">Forgot Password?</a>
       </div>
@@ -254,7 +276,10 @@
              pattern="[a-zA-Z0-9_\-]{3,20}" maxlength="20" />
       <div id="username-check" class="username-check"></div>
       <input type="email" id="signup-email" placeholder="Email address" />
-      <input type="password" id="signup-password" placeholder="Password" />
+      <div class="password-container">
+        <input type="password" id="signup-password" placeholder="Password" />
+        <span class="password-toggle" onclick="togglePassword('signup-password')" title="Show/Hide Password">👁</span>
+      </div>
       <div class="info">
         <small>Your password is a <a href="https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App" target="_blank">GitHub token with 'gist' scope</a>. 
         This allows secure data storage in private GitHub Gists.</small>
@@ -424,6 +449,22 @@
         posts = data.posts || []
         showApp()
       })
+    }
+
+    // Password visibility toggle
+    function togglePassword(fieldId) {
+      const passwordField = document.getElementById(fieldId)
+      const toggleIcon = passwordField.nextElementSibling
+      
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text'
+        toggleIcon.textContent = '👁‍🗨' // Eye with line (closed)
+        toggleIcon.title = 'Hide Password'
+      } else {
+        passwordField.type = 'password'
+        toggleIcon.textContent = '👁' // Open eye
+        toggleIcon.title = 'Show Password'
+      }
     }
 
     // Tab switching
