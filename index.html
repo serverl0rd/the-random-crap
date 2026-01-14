@@ -333,56 +333,24 @@
   <div id="auth-container" class="auth-container">
     <h1 class="brand-title">The Random Crap</h1>
     
-    <div class="tab-buttons">
-      <button class="tab-button active" onclick="showTab('login')">Login</button>
-      <button class="tab-button" onclick="showTab('signup')">Sign Up</button>
-    </div>
-
-    <!-- Login Form -->
-    <div id="login-form" class="auth-form">
-      <input type="text" id="login-username" placeholder="Username or Email" />
+    <!-- GitHub Authentication Form -->
+    <div id="auth-form" class="auth-form">
+      <h3 style="text-align: center; margin-bottom: 20px;">Sign In with GitHub</h3>
+      <input type="text" id="github-username" placeholder="GitHub Username" pattern="[a-zA-Z0-9_\-]{1,39}" maxlength="39" />
       <div class="password-container">
-        <input type="password" id="login-password" placeholder="Password" />
-        <span class="password-toggle" onclick="togglePassword('login-password')" title="Show/Hide Password">👁</span>
+        <input type="password" id="github-token" placeholder="GitHub Token" />
+        <span class="password-toggle" onclick="togglePassword('github-token')" title="Show/Hide Token">👁</span>
       </div>
-      <div class="forgot-password">
-        <a href="#" onclick="showTab('reset'); return false;">Forgot Password?</a>
-      </div>
-      <button onclick="loginUser()">Login</button>
-      <div id="login-error" class="error"></div>
-    </div>
-
-    <!-- Signup Form -->
-    <div id="signup-form" class="auth-form" style="display: none;">
-      <input type="text" id="signup-username" placeholder="Username (3-20 chars)" 
-             pattern="[a-zA-Z0-9_\-]{3,20}" maxlength="20" />
-      <div id="username-check" class="username-check"></div>
-      <input type="email" id="signup-email" placeholder="Email address" />
-      <div class="password-container">
-        <input type="password" id="signup-password" placeholder="Password" />
-        <span class="password-toggle" onclick="togglePassword('signup-password')" title="Show/Hide Password">👁</span>
-      </div>
+      <button onclick="authenticateWithGitHub()">Sign In</button>
+      <div id="auth-error" class="error"></div>
       <div class="info">
-        <small>Your password is a <a href="https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App" target="_blank">GitHub token with 'gist' scope</a>. 
-        This allows secure data storage in private GitHub Gists.</small>
+        <small>
+          <strong>How to get your GitHub token:</strong><br>
+          1. Go to <a href="https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App" target="_blank">GitHub Token Settings</a><br>
+          2. Generate a new token with 'gist' scope<br>
+          3. Use your actual GitHub username and the token above
+        </small>
       </div>
-      <button onclick="signupUser()" id="signup-button">Create Account</button>
-      <div id="signup-error" class="error"></div>
-    </div>
-
-    <!-- Password Reset Form -->
-    <div id="reset-form" class="auth-form" style="display: none;">
-      <h3 style="text-align: center; margin-bottom: 20px;">Reset Password</h3>
-      <input type="email" id="reset-email" placeholder="Your email address" />
-      <button onclick="resetPassword()">Send Reset Instructions</button>
-      <div class="info">
-        <small>You'll receive instructions to generate a new GitHub token as your new password.</small>
-      </div>
-      <div class="forgot-password">
-        <a href="#" onclick="showTab('login'); return false;">← Back to Login</a>
-      </div>
-      <div id="reset-error" class="error"></div>
-      <div id="reset-success" class="success"></div>
     </div>
   </div>
 
@@ -836,6 +804,78 @@
       document.getElementById('reset-form').style.display = tab === 'reset' ? 'block' : 'none'
     }
 
+    // GitHub Authentication
+    async function authenticateWithGitHub() {
+      const username = document.getElementById('github-username').value.trim()
+      const token = document.getElementById('github-token').value.trim()
+      const errorDiv = document.getElementById('auth-error')
+      
+      errorDiv.textContent = ''
+      
+      if (!username || !token) {
+        errorDiv.textContent = 'Please enter both GitHub username and token'
+        return
+      }
+      
+      if (!username.match(/^[a-zA-Z0-9_\-]{1,39}$/)) {
+        errorDiv.textContent = 'Please enter a valid GitHub username'
+        return
+      }
+      
+      try {
+        // Test the GitHub token
+        const tokenWorks = await testGithubToken(token, username)
+        
+        if (!tokenWorks) {
+          errorDiv.textContent = 'Invalid GitHub token or username. Please check your token has gist scope.'
+          return
+        }
+        
+        // Set globals
+        githubToken = token
+        currentUser = {
+          username: username,
+          created: new Date().toISOString()
+        }
+        
+        // Find or create user's gist
+        dataGistId = await findUserGist(githubToken, username)
+        
+        // Load existing data or create new
+        let userData = { posts: [], user: currentUser }
+        if (dataGistId) {
+          try {
+            userData = await loadDataFromGist()
+            currentUser = userData.user || currentUser
+            posts = userData.posts || []
+          } catch (error) {
+            console.log('Could not load existing data, starting fresh')
+          }
+        }
+        
+        // Ensure data is saved
+        await saveDataToGist(userData)
+        
+        // Save to localStorage
+        localStorage.setItem('currentUser', JSON.stringify(currentUser))
+        localStorage.setItem('githubToken', githubToken)
+        localStorage.setItem('dataGistId', dataGistId || '')
+        
+        showApp()
+        
+        // Handle pending redirect
+        const pendingRedirect = localStorage.getItem('pendingRedirect')
+        if (pendingRedirect) {
+          localStorage.removeItem('pendingRedirect')
+          viewProfile(pendingRedirect)
+        }
+      } catch (error) {
+        console.error('Authentication error:', error)
+        errorDiv.textContent = 'Authentication failed. Please try again.'
+      }
+    }
+
+    // OLD FUNCTIONS TO BE REMOVED - keeping for now to avoid breaking
     // Signup function
     async function signupUser() {
       const username = document.getElementById('signup-username').value.trim()
