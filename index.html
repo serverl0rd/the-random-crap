@@ -443,12 +443,29 @@
       }
     }
 
+    // Handle redirects from 404.html for GitHub Pages SPA routing
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectPath = urlParams.get('redirect')
+    
     // Check if already logged in
     if (currentUser && githubToken) {
       loadDataFromGist().then(data => {
         posts = data.posts || []
         showApp()
+        
+        // Handle redirect after login
+        if (redirectPath) {
+          // Remove redirect param from URL
+          const newUrl = window.location.pathname
+          window.history.replaceState({}, document.title, newUrl)
+          
+          // Navigate to the requested profile
+          viewProfile(redirectPath)
+        }
       })
+    } else if (redirectPath) {
+      // Store redirect for after login
+      localStorage.setItem('pendingRedirect', redirectPath)
     }
 
     // Password visibility toggle
@@ -545,6 +562,13 @@
         
         showApp()
         
+        // Handle pending redirect
+        const pendingRedirect = localStorage.getItem('pendingRedirect')
+        if (pendingRedirect) {
+          localStorage.removeItem('pendingRedirect')
+          viewProfile(pendingRedirect)
+        }
+        
       } catch (error) {
         errorDiv.textContent = `Signup failed: ${error.message}`
       }
@@ -592,6 +616,13 @@
         localStorage.setItem('currentUser', JSON.stringify(currentUser))
         
         showApp()
+        
+        // Handle pending redirect
+        const pendingRedirect = localStorage.getItem('pendingRedirect')
+        if (pendingRedirect) {
+          localStorage.removeItem('pendingRedirect')
+          viewProfile(pendingRedirect)
+        }
         
       } catch (error) {
         errorDiv.textContent = `Login failed: ${error.message}`
