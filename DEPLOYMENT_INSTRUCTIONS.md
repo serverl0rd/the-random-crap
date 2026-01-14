@@ -1,22 +1,22 @@
 # GitHub Pages Deployment Instructions
 
-This is a static web application that uses GitHub for authentication and GitHub Gists for data storage.
+This is a static web application with traditional signup/login that uses GitHub Gists for secure data storage.
 
 ## Automatic Deployment
 
-The app is configured to automatically deploy to GitHub Pages when you push to the main branch.
+The app automatically deploys to GitHub Pages when you push to the main branch.
 
 ### Setup Steps:
 
 1. **Enable GitHub Pages**:
    - Go to your repository Settings
    - Navigate to "Pages" in the sidebar
-   - Under "Source", select "GitHub Actions"
+   - Under "Source", select "Deploy from a branch" → main
 
 2. **Push your changes**:
    ```bash
    git add .
-   git commit -m "Convert to GitHub Pages app with Gist storage"
+   git commit -m "Deploy to GitHub Pages"
    git push origin main
    ```
 
@@ -25,19 +25,28 @@ The app is configured to automatically deploy to GitHub Pages when you push to t
    - Replace YOUR_USERNAME with your GitHub username
    - Replace REPOSITORY_NAME with your repository name
 
-## Authentication Setup
+## User Authentication
 
-The app uses GitHub Personal Access Tokens for authentication:
+The app provides familiar signup/login experience:
 
-1. **Create a GitHub Token**:
-   - Go to [GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)](https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App)
-   - Select the "gist" scope
-   - Generate token and copy it
+### **For New Users (Sign Up):**
+1. Click "Sign Up" tab
+2. Choose a unique username (3-20 characters)
+3. Enter your email address
+4. For password: [Create a GitHub token](https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App) with "gist" scope
+5. Paste the token as your password
+6. Click "Create Account"
 
-2. **Use the Token**:
-   - Paste your token into the app when prompted
-   - The token is stored securely in your browser's localStorage
-   - Your data will be saved to a private GitHub Gist
+### **For Existing Users (Login):**
+1. Enter your username or email
+2. Enter your password (GitHub token)
+3. Click "Login"
+
+### **Forgot Password:**
+1. Click "Forgot Password?" below the password field
+2. Enter your email address
+3. Follow instructions to generate a new GitHub token
+4. Use the new token as your new password
 
 ## Local Development
 

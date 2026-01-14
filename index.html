@@ -126,6 +126,18 @@
     .auth-form input {
       margin-bottom: 15px;
     }
+    .forgot-password {
+      text-align: center;
+      margin: 10px 0;
+    }
+    .forgot-password a {
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .forgot-password a:hover {
+      text-decoration: underline;
+    }
     .otp-inputs {
       display: flex;
       gap: 10px;
@@ -222,13 +234,15 @@
     <div class="tab-buttons">
       <button class="tab-button active" onclick="showTab('login')">Login</button>
       <button class="tab-button" onclick="showTab('signup')">Sign Up</button>
-      <button class="tab-button" onclick="showTab('reset')">Reset Password</button>
     </div>
 
     <!-- Login Form -->
     <div id="login-form" class="auth-form">
       <input type="text" id="login-username" placeholder="Username or Email" />
       <input type="password" id="login-password" placeholder="Password" />
+      <div class="forgot-password">
+        <a href="#" onclick="showTab('reset'); return false;">Forgot Password?</a>
+      </div>
       <button onclick="loginUser()">Login</button>
       <div id="login-error" class="error"></div>
     </div>
@@ -250,10 +264,14 @@
 
     <!-- Password Reset Form -->
     <div id="reset-form" class="auth-form" style="display: none;">
+      <h3 style="text-align: center; margin-bottom: 20px;">Reset Password</h3>
       <input type="email" id="reset-email" placeholder="Your email address" />
       <button onclick="resetPassword()">Send Reset Instructions</button>
       <div class="info">
         <small>You'll receive instructions to generate a new GitHub token as your new password.</small>
+      </div>
+      <div class="forgot-password">
+        <a href="#" onclick="showTab('login'); return false;">← Back to Login</a>
       </div>
       <div id="reset-error" class="error"></div>
       <div id="reset-success" class="success"></div>
@@ -409,10 +427,22 @@
 
     // Tab switching
     function showTab(tab) {
-      document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active')
-      })
-      event.target.classList.add('active')
+      // Only update tab buttons if it's login or signup
+      if (tab === 'login' || tab === 'signup') {
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.classList.remove('active')
+        })
+        if (event && event.target) {
+          event.target.classList.add('active')
+        } else {
+          // When called programmatically, find the right button
+          document.querySelectorAll('.tab-button').forEach(btn => {
+            if (btn.textContent.toLowerCase().includes(tab)) {
+              btn.classList.add('active')
+            }
+          })
+        }
+      }
       
       document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none'
       document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none'
