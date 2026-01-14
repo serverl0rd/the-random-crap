@@ -505,6 +505,11 @@
     async function makePostsPublic(e) {
       if (e) e.preventDefault()
       
+      if (!currentUser || !githubToken) {
+        alert('❌ Please log in first to make your posts public.')
+        return
+      }
+      
       try {
         console.log('Making posts public...')
         const success = await makeGistPublic()
@@ -523,6 +528,39 @@
       } catch (error) {
         console.error('Error making posts public:', error)
         alert('❌ Error making posts public. Check console for details.')
+      }
+    }
+
+    // Debug function for browser console
+    window.debugMakePublic = async function() {
+      console.log('🔧 Debug: Checking authentication state...')
+      console.log('Current user:', currentUser)
+      console.log('GitHub token:', githubToken ? 'exists' : 'missing')
+      console.log('Data gist ID:', dataGistId)
+      
+      if (!currentUser || !githubToken) {
+        console.log('❌ Not logged in. Please log in first.')
+        return false
+      }
+      
+      if (!dataGistId) {
+        console.log('❌ No gist ID found. Try creating a post first.')
+        return false
+      }
+      
+      try {
+        console.log('🚀 Attempting to make gist public...')
+        const success = await makeGistPublic()
+        if (success) {
+          console.log('✅ Success! Gist is now public.')
+          return true
+        } else {
+          console.log('❌ Failed to make gist public.')
+          return false
+        }
+      } catch (error) {
+        console.error('❌ Error:', error)
+        return false
       }
     }
 
