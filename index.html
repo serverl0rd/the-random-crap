@@ -98,6 +98,88 @@
       margin-top: 5px;
     }
     .char-count.over { color: red; }
+    .hide { display: none; }
+    
+    /* Settings popup styles */
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 1000;
+    }
+    
+    .settings-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    .settings-popup h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    
+    .settings-field {
+      margin-bottom: 20px;
+    }
+    
+    .settings-field label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .settings-field input {
+      width: 100%;
+      padding: 8px 12px;
+      font-family: monospace;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .settings-field small {
+      display: block;
+      margin-top: 5px;
+      color: #666;
+      font-size: 12px;
+    }
+    
+    .settings-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+    }
+    
+    .settings-buttons button {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    
+    .checkbox-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .checkbox-field input[type="checkbox"] {
+      width: auto;
+    }
+    
     .auth-container {
       margin: 50px 0;
       text-align: center;
@@ -309,6 +391,7 @@
       <h2 id="page-title">Random Crap</h2>
       <div class="user-info">
         <span id="user-display"></span>
+        <button onclick="showSettings()" style="background: #666; margin-right: 10px; padding: 8px 12px; font-size: 12px;">⚙️</button>
         <button onclick="logout()">Logout</button>
       </div>
     </div>
@@ -316,7 +399,6 @@
     <div class="nav-links" id="nav-links">
       <a href="#" onclick="goHome(event)">Home</a>
       <a href="#" onclick="viewProfile(currentUser?.username, event)" id="profile-link">My Posts</a>
-      <a href="#" onclick="makePostsPublic(event)" id="make-public-link" style="color: #666; font-size: 12px;">Make Posts Public</a>
     </div>
 
     <div id="new-post">
@@ -326,6 +408,32 @@
     </div>
     
     <div id="posts"></div>
+  </div>
+
+  <!-- Settings Popup -->
+  <div id="settings-overlay" class="settings-overlay" onclick="hideSettings()">
+    <div class="settings-popup" onclick="event.stopPropagation()">
+      <h3>Settings</h3>
+      
+      <div class="settings-field">
+        <label for="github-username">GitHub Username</label>
+        <input type="text" id="github-username" placeholder="e.g. serverl0rd">
+        <small>Your actual GitHub username for public profile mapping</small>
+      </div>
+      
+      <div class="settings-field">
+        <div class="checkbox-field">
+          <input type="checkbox" id="posts-public">
+          <label for="posts-public">Make posts publicly viewable</label>
+        </div>
+        <small>Allow anonymous users to view your posts</small>
+      </div>
+      
+      <div class="settings-buttons">
+        <button onclick="hideSettings()">Cancel</button>
+        <button onclick="saveSettings()">Save</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -562,6 +670,69 @@
         console.error('❌ Error:', error)
         return false
       }
+    }
+
+    // Settings functions
+    function showSettings() {
+      // Load current settings
+      const settings = JSON.parse(localStorage.getItem('userSettings') || '{}')
+      
+      document.getElementById('github-username').value = settings.githubUsername || currentUser?.username || ''
+      document.getElementById('posts-public').checked = settings.postsPublic !== false // default to true
+      
+      document.getElementById('settings-overlay').style.display = 'block'
+    }
+
+    function hideSettings() {
+      document.getElementById('settings-overlay').style.display = 'none'
+    }
+
+    async function saveSettings() {
+      const githubUsername = document.getElementById('github-username').value.trim()
+      const postsPublic = document.getElementById('posts-public').checked
+      
+      if (!githubUsername) {
+        alert('Please enter your GitHub username')
+        return
+      }
+      
+      const settings = {
+        githubUsername: githubUsername,
+        postsPublic: postsPublic
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('userSettings', JSON.stringify(settings))
+      
+      // If posts should be public, make gist public
+      if (postsPublic) {
+        try {
+          const success = await makeGistPublic()
+          if (success) {
+            console.log('Gist made public successfully')
+            // Update the navigation button
+            const button = document.getElementById('make-public-link')
+            if (button) {
+              button.textContent = '✅ Posts Public'
+              button.style.color = '#4CAF50'
+            }
+          }
+        } catch (error) {
+          console.error('Failed to make gist public:', error)
+        }
+      }
+      
+      hideSettings()
+      alert('Settings saved successfully!')
+      
+      // Update public profile loading to use the mapped username
+      console.log(`GitHub username mapped to: ${githubUsername}`)
+    }
+
+    // Get mapped GitHub username
+    function getGithubUsername() {
+      const settings = JSON.parse(localStorage.getItem('userSettings') || '{}')
+      return settings.githubUsername || currentUser?.username || null
     }
 
     // Handle redirects from 404.html for GitHub Pages SPA routing
@@ -963,8 +1134,10 @@
         })
       } else {
         // Load public posts for this user (works for anonymous visitors)
-        console.log(`Loading public posts for ${username}...`)
-        loadPublicPostsForUser(username).then(publicPosts => {
+        // Use mapped GitHub username if viewing own profile
+        const githubUsername = (username === currentUser?.username) ? getGithubUsername() : username
+        console.log(`Loading public posts for ${username} (GitHub: ${githubUsername})...`)
+        loadPublicPostsForUser(githubUsername).then(publicPosts => {
           if (publicPosts.length > 0) {
             posts = publicPosts
             console.log(`Loaded ${publicPosts.length} public posts for ${username}`)
