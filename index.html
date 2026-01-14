@@ -447,12 +447,14 @@
     const urlParams = new URLSearchParams(window.location.search)
     const redirectPath = urlParams.get('redirect')
     
-    // Check if this is a public profile URL
+    // Check if this is a public profile URL (either in path or redirect parameter)
     const path = window.location.pathname
     const segments = path.split('/').filter(Boolean)
-    const isPublicProfile = segments.length >= 1 && segments[segments.length - 1].match(/^[a-zA-Z0-9_-]+$/) && segments[segments.length - 1] !== 'the-random-crap'
+    const pathProfile = segments.length >= 1 && segments[segments.length - 1].match(/^[a-zA-Z0-9_-]+$/) && segments[segments.length - 1] !== 'the-random-crap'
+    const redirectProfile = redirectPath && redirectPath.match(/^[a-zA-Z0-9_-]+$/) && redirectPath !== 'the-random-crap'
+    const isPublicProfile = pathProfile || redirectProfile
     
-    console.log('Initial route check:', { path, segments, isPublicProfile, currentUser: !!currentUser })
+    console.log('Initial route check:', { path, segments, pathProfile, redirectPath, redirectProfile, isPublicProfile, currentUser: !!currentUser })
     
     // Check if already logged in OR if this is a public profile page
     if ((currentUser && githubToken) || isPublicProfile) {
@@ -476,6 +478,15 @@
         // Public profile access (not logged in)
         console.log('Showing public profile without login')
         posts = [] // No posts array for anonymous users
+        
+        // Clean up URL if coming from redirect
+        if (redirectPath) {
+          const newUrl = window.location.pathname
+          window.history.replaceState({}, document.title, newUrl)
+          // Set the URL to the profile path for proper detection
+          window.history.replaceState({}, document.title, newUrl + redirectPath)
+        }
+        
         showApp() // This will detect it's a public profile and show accordingly
       }
     } else if (redirectPath) {
