@@ -1,139 +1,91 @@
 # The Random Crap
 
-A minimalist static microblogging platform with traditional signup/login that secretly uses GitHub Gists for data storage. Post your random crap without filters - completely serverless with familiar authentication!
+A minimalist microblogging platform using GitHub for authentication and Gists for storage. Post your random thoughts - completely serverless!
 
-🌟 **Live Demo**: [https://serverl0rd.github.io/the-random-crap](https://serverl0rd.github.io/the-random-crap)
+**Live Demo**: [https://serverl0rd.github.io/the-random-crap](https://serverl0rd.github.io/the-random-crap)
 
-## ✨ Features
+## Features
 
-- 👤 **Traditional Authentication** - Familiar signup/login with username, email & password
-- 💾 **Private Data Storage** - Each user gets their own private GitHub Gist
-- 🌍 **Cross-Device Sync** - Access your data from any device with same credentials
-- ✏️ **Full Post Management** - Create, edit, delete with complete version history
-- 👥 **User Profiles** - Public profile pages at `/username`
-- 📱 **Responsive Design** - Perfect on mobile and desktop
-- 🚀 **Zero Infrastructure** - No servers, databases, or hosting costs
-- 🔒 **Privacy First** - Your data is stored in your own private GitHub space
-- 🔄 **Password Reset** - Easy password recovery system
+- **GitHub Authentication** - Sign in with your GitHub username and personal access token
+- **Gist Storage** - Your posts are stored in your own public GitHub Gist
+- **Public Profiles** - Share your profile at `serverl0rd.github.io/the-random-crap/username`
+- **Post Management** - Create, edit, delete posts with full version history
+- **Cross-Device Sync** - Access your posts from any device
+- **Zero Infrastructure** - No servers, databases, or hosting costs
+- **Minimalist Design** - Clean, monospace aesthetic
 
-## 🚀 Quick Start
+## Quick Start
 
-### 1. **Visit the App**
-Go to [https://serverl0rd.github.io/the-random-crap](https://serverl0rd.github.io/the-random-crap)
+### 1. Get a GitHub Token
+1. Go to [GitHub Token Settings](https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App)
+2. Generate a new token with **gist** scope
+3. Copy the token
 
-### 2. **Create Your Account**
-1. Click **"Sign Up"**
-2. Choose a username and enter your email
-3. For password, [create a GitHub token](https://github.com/settings/tokens/new?scopes=gist&description=The%20Random%20Crap%20App) with "gist" scope
-4. Paste the token as your password
-5. Start posting!
+### 2. Sign In
+1. Visit [the-random-crap](https://serverl0rd.github.io/the-random-crap)
+2. Click **Sign In**
+3. Enter your GitHub username and token
+4. Start posting!
 
-### 3. **Login Anywhere**
-- Use your **username** (or email) and **password** on any device
-- Your posts automatically sync across all devices
+### 3. Share Your Profile
+Your public profile is available at:
+```
+https://serverl0rd.github.io/the-random-crap/YOUR_USERNAME
+```
 
-## 🔧 How It Works (Behind the Scenes)
+## How It Works
 
-This app cleverly uses GitHub's infrastructure while providing a traditional user experience:
+| What You See | What's Happening |
+|--------------|------------------|
+| Sign In | GitHub token validation |
+| Your Posts | Stored in a public GitHub Gist |
+| Public Profile | Fetches posts from GitHub API |
+| Edit/Delete | Updates your Gist |
 
-1. **"Password"** = GitHub Personal Access Token (users don't need to know this)
-2. **"Account"** = Private GitHub Gist containing user data
-3. **"Database"** = GitHub's Gist system handles all storage and sync
-4. **"Login"** = Token validation + gist access
-
-Users experience normal signup/login, but get the benefits of decentralized, private data storage!
-
-## 🛠️ Local Development
+## Local Development
 
 ```bash
-# Clone and run locally
 git clone https://github.com/serverl0rd/the-random-crap.git
 cd the-random-crap
-
-# Start local server
+npm install
 npm run serve
-# or
-python3 -m http.server 8000
-
 # Visit http://localhost:8000
 ```
 
-## 🎯 Why This Approach is Brilliant
-
-### **For Users:**
-- ✅ **Familiar experience** - Looks like any social app
-- ✅ **Own their data** - Private GitHub Gist they control
-- ✅ **Works everywhere** - Same credentials on all devices
-- ✅ **Password recovery** - Standard reset process
-- ✅ **No tracking** - No analytics or data collection
-
-### **For Developers:**
-- ✅ **Zero infrastructure costs** - GitHub handles everything
-- ✅ **No user management** - GitHub authentication
-- ✅ **No databases** - Gists provide storage
-- ✅ **Auto scaling** - GitHub's global CDN
-- ✅ **Built-in backup** - GitHub's reliability
-
-## 📱 User Guide
-
-### **Posting**
-- Write up to 500 characters
-- Edit or delete your posts anytime
-- Full edit history is preserved
-
-### **Profiles** 
-- Your profile: Click "My Posts"
-- Others' profiles: Visit `/username`
-- All posts are public by design
-
-### **Account Management**
-- **Forgot Password?** Click link below password field → Generate new GitHub token
-- **Multi-device?** Same username/password everywhere
-- **Data export?** Download your GitHub Gist
-
-## 🔒 Security & Privacy
-
-- **Your data** = Stored in your private GitHub Gist
-- **Your password** = GitHub token (industry standard security)
-- **Your privacy** = No tracking, analytics, or data collection
-- **Your control** = You can export, delete, or move your data anytime
-
-## 🛡️ Troubleshooting
-
-**Can't Sign Up?**
-- Ensure your GitHub token has "gist" scope
-- Username must be 3-20 characters (letters, numbers, _, -)
-
-**Can't Login?**
-- Check username/email spelling
-- Verify your GitHub token hasn't expired
-- Try generating a new token
-
-**Lost Password?**
-1. Click "Forgot Password?" link below password field
-2. Enter your email address  
-3. Generate new GitHub token following instructions
-4. Use same username/email with new token
-
-## 🎨 For Developers
-
-Want to fork this concept?
+## Tech Stack
 
 - **Frontend**: Pure HTML/CSS/JS (no frameworks)
-- **Authentication**: GitHub API
+- **Auth**: GitHub API
 - **Storage**: GitHub Gists API
-- **Deployment**: Any static host (GitHub Pages, Netlify, etc.)
+- **Hosting**: GitHub Pages
 
-## 📄 License
+## Public Profile Features
 
-MIT License - Fork, modify, and use freely!
+When someone visits your profile (`/username`):
+- Clean, read-only view of your posts
+- No edit/delete buttons visible
+- Centered title: `@username's crap`
+- Animated loading indicator
+- Works without authentication
 
-## 👨‍💻 Credits
+## Troubleshooting
 
-Created by [@ServerLord](https://serverlord.in) ([Atharva Kulkarni](https://atharvakulkarni.link))
+**Can't sign in?**
+- Ensure your GitHub token has "gist" scope
+- Check that your username matches your GitHub username exactly
 
-This project demonstrates how to create **traditional web app experiences** using **modern decentralized infrastructure**.
+**Posts not loading?**
+- GitHub API has rate limits for unauthenticated requests
+- Try refreshing after a few seconds
 
----
+**Profile shows "No posts"?**
+- Make sure you've created at least one post while signed in
+- Your Gist needs to be public (happens automatically)
 
-⭐ **Star this repo** if you love the concept!
+## License
+
+MIT License - Fork and use freely!
+
+## Credits
+
+Created by [@ServerLord](https://github.com/serverl0rd) (Atharva Kulkarni)
