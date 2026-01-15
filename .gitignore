@@ -2,3 +2,20 @@ node_modules/
 posts.json
 users.json
 .env
+backups/
+
+# Temporary/debug files
+*.txt
+debug-screenshot.png
+public-profile-test.png
+test-public-landing.js
+scripts/
+
+# Development notes
+DATA_PROTECTION.md
+DEBUG_PROFILE_ISSUE.md
+DEPLOYMENT_SAFETY.md
+NAVIGATION_FIXES.md
+PROFILE_FIXES.md
+PUBLIC_ACCESS_FIX.md
+PUBLIC_PROFILE_REDESIGN.md
