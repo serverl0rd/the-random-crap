@@ -99,6 +99,16 @@
     }
     .char-count.over { color: red; }
     .hide { display: none; }
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
     .auth-container {
       margin: 50px 0;
       text-align: center;
@@ -1089,10 +1099,10 @@
       // Set viewing state
       viewingUser = username
 
-      // Show loading indicator
+      // Show loading indicator with animated dots
       document.getElementById('posts').innerHTML = `
         <div style="text-align: center; margin-top: 40px; color: #999;">
-          Loading...
+          Loading<span class="loading-dots"></span>
         </div>
       `
 
