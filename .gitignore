@@ -4,11 +4,15 @@ users.json
 .env
 backups/
 
+# System files
+.DS_Store
+
 # Temporary/debug files
 *.txt
-debug-screenshot.png
-public-profile-test.png
-test-public-landing.js
+*.log
+*.png
+debug-*.js
+test-*.js
 scripts/
 
 # Development notes

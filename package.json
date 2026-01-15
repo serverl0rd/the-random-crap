@@ -4,7 +4,13 @@
   "description": "A simple static micro-blogging platform",
   "scripts": {
     "build": "echo 'Static site - no build needed'",
-    "serve": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000"
+    "serve": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000",
+    "backup": "node scripts/backup-data.js backup",
+    "backup:list": "node scripts/backup-data.js list",
+    "backup:verify": "node scripts/backup-data.js verify",
+    "backup:restore": "node scripts/backup-data.js restore",
+    "pre-deploy": "npm run backup && npm run backup:verify",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
