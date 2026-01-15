@@ -1088,7 +1088,14 @@
       
       // Set viewing state
       viewingUser = username
-      
+
+      // Show loading indicator
+      document.getElementById('posts').innerHTML = `
+        <div style="text-align: center; margin-top: 40px; color: #999;">
+          Loading...
+        </div>
+      `
+
       // Add navigation back to app if logged in
       if (currentUser) {
         const backLink = document.createElement('div')
