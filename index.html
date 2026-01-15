@@ -1069,17 +1069,22 @@
 
       // Show app container but hide logged-in elements
       document.getElementById('app').style.display = 'block'
-      
-      // Hide all logged-in interface elements
-      document.querySelector('.header').style.display = 'none'
+
+      // Hide logged-in interface elements (but keep header for title)
+      document.querySelector('.user-info').style.display = 'none'
       document.getElementById('nav-links').style.display = 'none'
       document.getElementById('new-post').style.display = 'none'
-      
-      // Set clean title
-      document.getElementById('page-title').textContent = `@${username}'s crap`
-      document.getElementById('page-title').style.display = 'block'
-      document.getElementById('page-title').style.textAlign = 'center'
-      document.getElementById('page-title').style.margin = '40px 0'
+
+      // Set clean title with centered styling
+      const header = document.querySelector('.header')
+      header.style.display = 'block'
+      header.style.justifyContent = 'center'
+
+      const pageTitle = document.getElementById('page-title')
+      pageTitle.textContent = `@${username}'s crap`
+      pageTitle.style.textAlign = 'center'
+      pageTitle.style.margin = '40px 0'
+      pageTitle.style.fontSize = '28px'
       
       // Set viewing state
       viewingUser = username
@@ -1159,11 +1164,12 @@
     
     function showLoggedInApp() {
       console.log('Showing logged-in app interface')
-      
+
       // Clean up any back links
       const existingBackLinks = document.querySelectorAll('div a[onclick*="showLoggedInApp"]')
       existingBackLinks.forEach(link => link.parentElement.remove())
-      
+
+      document.getElementById('public-landing').style.display = 'none'
       document.getElementById('auth-container').style.display = 'none'
       document.getElementById('app').style.display = 'block'
       document.getElementById('user-display').textContent = `@${currentUser.username}`
@@ -1171,12 +1177,15 @@
       
       // Show all logged-in interface elements
       document.querySelector('.header').style.display = 'flex'
+      document.querySelector('.header').style.justifyContent = ''
+      document.querySelector('.user-info').style.display = 'flex'
       document.getElementById('nav-links').style.display = 'flex'
       document.getElementById('new-post').style.display = 'block'
-      
+
       // Reset title styling
       document.getElementById('page-title').style.textAlign = ''
       document.getElementById('page-title').style.margin = ''
+      document.getElementById('page-title').style.fontSize = ''
       
       goHome()
     }
@@ -1363,9 +1372,9 @@
 
     function renderPosts(postsToRender) {
       const postsEl = document.getElementById('posts')
-      
-      // Check if we're in public profile mode (header is hidden)
-      const isPublicView = document.querySelector('.header').style.display === 'none'
+
+      // Check if we're in public profile mode (not logged in, or viewing someone else's profile)
+      const isPublicView = !currentUser || (viewingUser && viewingUser !== currentUser?.username)
       const basePath = getBasePath()
       
       postsEl.innerHTML = postsToRender.map(post => `
