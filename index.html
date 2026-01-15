@@ -249,7 +249,14 @@
   </style>
 </head>
 <body>
-  <div id="auth-container" class="auth-container">
+  <!-- Public Landing Page -->
+  <div id="public-landing" style="text-align: center; margin: 100px auto; max-width: 600px;">
+    <h1 class="brand-title" style="font-size: 48px; margin-bottom: 40px;">The Random Crap</h1>
+    <p style="font-size: 18px; color: #666; margin-bottom: 40px; font-family: monospace;">A minimalist microblogging platform</p>
+    <a href="#" onclick="showSignIn()" style="background: #000; color: #fff; padding: 15px 30px; text-decoration: none; font-family: monospace; font-size: 16px; border-radius: 4px;">Sign In</a>
+  </div>
+
+  <div id="auth-container" class="auth-container" style="display: none;">
     <h1 class="brand-title">The Random Crap</h1>
     
     <!-- GitHub Authentication Form -->
@@ -270,6 +277,9 @@
           2. Generate a new token with 'gist' scope<br>
           3. Use your GitHub username and token above
         </small>
+      </div>
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="#" onclick="showPublicLanding()" style="color: #666; text-decoration: none; font-size: 14px;">← Back</a>
       </div>
     </div>
   </div>
@@ -343,11 +353,11 @@
 
     async function githubPublicRequest(url, options = {}) {
       // For public API requests that don't require authentication
+      // Note: Don't include Content-Type for GET requests as it triggers CORS preflight
       const response = await fetch(`https://api.github.com${url}`, {
         ...options,
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
           ...options.headers
         }
       })
@@ -658,6 +668,21 @@
     } else if (redirectPath) {
       // Store redirect for after login
       localStorage.setItem('pendingRedirect', redirectPath)
+    } else {
+      // Show public landing page
+      showPublicLanding()
+    }
+
+    // Functions to toggle between public landing and sign-in
+    function showSignIn() {
+      document.getElementById('public-landing').style.display = 'none'
+      document.getElementById('auth-container').style.display = 'block'
+    }
+
+    function showPublicLanding() {
+      document.getElementById('public-landing').style.display = 'block'
+      document.getElementById('auth-container').style.display = 'none'
+      document.getElementById('app').style.display = 'none'
     }
 
     // Password visibility toggle
@@ -992,39 +1017,23 @@
       showTab('login')
     }
 
-    // Username availability check
-    document.getElementById('signup-username').addEventListener('input', (e) => {
-      clearTimeout(usernameCheckTimeout)
-      const username = e.target.value
-      const checkDiv = document.getElementById('username-check')
-      
-      if (username.length < 3) {
-        checkDiv.textContent = ''
-        return
-      }
-      
-      if (!username.match(/^[a-zA-Z0-9_\-]{3,20}$/)) {
-        checkDiv.textContent = 'Only letters, numbers, _ and -'
-        checkDiv.className = 'username-check taken'
-        return
-      }
-      
-      checkDiv.textContent = '✓ Username format valid'
-      checkDiv.className = 'username-check available'
-    })
+    // GitHub username validation on input
+    const usernameField = document.getElementById('github-username')
+    if (usernameField) {
+      usernameField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('github-token').focus()
+        }
+      })
+    }
 
-    // Enter key handlers for forms
-    document.getElementById('login-password').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') loginUser()
-    })
-    
-    document.getElementById('signup-password').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') signupUser()
-    })
-    
-    document.getElementById('reset-email').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') resetPassword()
-    })
+    // Enter key handler for GitHub token field
+    const tokenField = document.getElementById('github-token')
+    if (tokenField) {
+      tokenField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') authenticateWithGitHub()
+      })
+    }
 
     function showApp() {
       const path = window.location.pathname
@@ -1053,10 +1062,11 @@
     
     function showPublicProfile(username) {
       console.log('Showing public profile for:', username)
-      
-      // Hide auth container
+
+      // Hide landing and auth containers
+      document.getElementById('public-landing').style.display = 'none'
       document.getElementById('auth-container').style.display = 'none'
-      
+
       // Show app container but hide logged-in elements
       document.getElementById('app').style.display = 'block'
       
